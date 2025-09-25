@@ -4,71 +4,155 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { requestRewardRedemption, getChildProfileById, getChildRewardInstancesByChild } from '@/lib/firebase/firestore';
-import type { ChildRewardInstance, ChildProfile, RewardTemplate } from '@/lib/types';
-import { rewardCategories } from '@/lib/types';
+import { requestRewardRedemption, getChildProfileById, getChildRewardInstancesByChild, toggleFavoriteReward } from '@/lib/firebase/firestore';
+import type { ChildRewardInstance, ChildProfile } from '@/lib/types';
+import type { PredefinedRewardIdea } from '@/lib/predefined-reward-ideas';
 import Loading from '../loading';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Star, Clock, Gift, Lock, Sparkles } from 'lucide-react';
+import { Star, Clock, Gift, Sparkles, Heart, ThumbsUp, PackagePlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { predefinedRewardGroups } from '@/lib/predefined-reward-ideas';
 import { Loader2 } from 'lucide-react';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { useAuth } from '@/contexts/AuthContext';
+
+
+interface RewardCardProps {
+  reward: PredefinedRewardIdea;
+  childStars: number;
+  isFavorited: boolean;
+  onToggleFavorite: (rewardTitle: string, isFavorited: boolean) => void;
+  onRedeem: (reward: PredefinedRewardIdea) => void;
+  isProcessing: boolean;
+}
+
+function RewardCard({ reward, childStars, isFavorited, onToggleFavorite, onRedeem, isProcessing }: RewardCardProps) {
+    const canAfford = reward.starsCost ? childStars >= reward.starsCost : false;
+
+    return (
+        <Card className={cn(
+            "flex flex-col h-full shadow-sm hover:shadow-md transition-shadow",
+            !canAfford && "bg-muted/50"
+        )}>
+            <CardHeader className="p-4">
+                 <div className="flex justify-between items-start">
+                    <p className="font-semibold text-sm leading-tight pr-2">{reward.title}</p>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        onClick={() => onToggleFavorite(reward.title, isFavorited)}
+                    >
+                        <Star className={cn("h-5 w-5", isFavorited ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground")} />
+                    </Button>
+                </div>
+            </CardHeader>
+            <CardContent className="p-4 pt-0 flex-grow">
+                 <p className="text-xs text-muted-foreground line-clamp-2">
+                    {reward.description || 'Uma recompensa incrível aguardando para ser conquistada!'}
+                </p>
+            </CardContent>
+            <CardFooter className="p-4 pt-0 flex-col items-start gap-3">
+                 <Badge variant="secondary" className="font-semibold text-sm py-1 px-3">
+                    {reward.starsCost} <Star className="ml-1.5 h-4 w-4 text-yellow-400 fill-current" />
+                </Badge>
+                <Button
+                    size="sm"
+                    className="w-full"
+                    disabled={!canAfford || isProcessing}
+                    onClick={() => onRedeem(reward)}
+                >
+                    {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : 'Pedir Resgate'}
+                </Button>
+            </CardFooter>
+        </Card>
+    );
+}
 
 
 export default function ChildRewardsPage() {
   const params = useParams();
   const childId = params.childId as string;
   const { toast } = useToast();
+  const { user, isChildAuthenticated } = useAuth(); // Assuming child auth sets a user-like object or specific state
 
-  const rewardTemplates = useMemo(() => predefinedRewardGroups.flatMap(g => g.items), []);
-  const [pendingRedemptions, setPendingRedemptions] = useState<ChildRewardInstance[]>([]);
   const [child, setChild] = useState<ChildProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [rewardInstances, setRewardInstances] = useState<ChildRewardInstance[]>([]);
   
-  const [rewardToRedeem, setRewardToRedeem] = useState<RewardTemplate | null>(null);
+  const [rewardToRedeem, setRewardToRedeem] = useState<PredefinedRewardIdea | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  const allPredefinedRewards = useMemo(() => predefinedRewardGroups.flatMap(g => g.items), []);
+
+  const fetchData = async (id: string) => {
+      setIsLoading(true);
+      try {
+          const [childProfile, rewardInstancesData] = await Promise.all([
+              getChildProfileById(id),
+              getChildRewardInstancesByChild(id)
+          ]);
+          
+          if (!childProfile) {
+              throw new Error("Perfil do herói não encontrado.");
+          }
+          
+          setChild(childProfile);
+          setRewardInstances(rewardInstancesData);
+      } catch (error: any) {
+          console.error("Error fetching child rewards data:", error);
+          toast({ title: 'Erro ao carregar dados', description: error.message, variant: 'destructive' });
+      } finally {
+          setIsLoading(false);
+      }
+  };
 
   useEffect(() => {
     if (childId) {
-      setIsLoading(true);
-      Promise.all([
-        getChildProfileById(childId),
-        getChildRewardInstancesByChild(childId)
-      ]).then(([childProfile, rewardInstances]) => {
-        if (!childProfile) {
-          throw new Error("Perfil do herói não encontrado.");
-        }
-        setChild(childProfile);
-        setPendingRedemptions(rewardInstances.filter(r => r.status === 'pending_approval'));
-      }).catch(error => {
-        console.error("Error fetching child rewards data:", error);
-        toast({ title: 'Erro ao buscar recompensas', variant: 'destructive' });
-      }).finally(() => {
-        setIsLoading(false);
-      });
+      fetchData(childId);
     }
-  }, [childId, toast]);
+  }, [childId]);
+
+  const handleToggleFavorite = async (rewardTitle: string, isCurrentlyFavorited: boolean) => {
+    if (!child) return;
+    
+    // Optimistic UI Update
+    const oldFavorites = child.favoriteRewardIds || [];
+    const newFavorites = isCurrentlyFavorited
+        ? oldFavorites.filter(id => id !== rewardTitle)
+        : [...oldFavorites, rewardTitle];
+    setChild({ ...child, favoriteRewardIds: newFavorites });
+
+    try {
+        await toggleFavoriteReward(child.id, rewardTitle);
+    } catch (error) {
+        console.error("Error toggling favorite:", error);
+        // Revert UI on error
+        setChild({ ...child, favoriteRewardIds: oldFavorites });
+        toast({ title: 'Ops!', description: 'Não foi possível atualizar seus favoritos.', variant: 'destructive' });
+    }
+  };
   
   const confirmRedemption = async () => {
     if (!rewardToRedeem || !child) return;
 
     setIsProcessing(true);
     try {
-      const newPendingRedemption = await requestRewardRedemption(rewardToRedeem, child.id);
-      
-      if(newPendingRedemption) {
-        setPendingRedemptions(prev => [...prev, newPendingRedemption as ChildRewardInstance]);
-      }
+      await requestRewardRedemption(rewardToRedeem, child.id);
       
       toast({
         title: "Pedido de Resgate Enviado!",
         description: `Seu pedido para "${rewardToRedeem.title}" foi enviado para aprovação!`,
       });
+      
+      // Refetch data to update pending rewards
+      await fetchData(child.id);
+
     } catch (error: any) {
       console.error("Error requesting reward redemption:", error);
       toast({ title: 'Ops! Algo deu errado.', description: error.message, variant: 'destructive' });
@@ -78,52 +162,36 @@ export default function ChildRewardsPage() {
     }
   };
 
+  const favoriteRewards = useMemo(() => {
+    if (!child?.favoriteRewardIds) return [];
+    const favoriteSet = new Set(child.favoriteRewardIds);
+    return allPredefinedRewards.filter(r => favoriteSet.has(r.title));
+  }, [child, allPredefinedRewards]);
+
   const availableRewardsByCategory = useMemo(() => {
     if (!child) return {};
-    const alreadyPendingOrRedeemed = new Set(pendingRedemptions.map(r => r.title));
+    const pendingOrRedeemedTitles = new Set(rewardInstances.map(r => r.title));
+    
+    return allPredefinedRewards.reduce((acc, reward) => {
+      if (pendingOrRedeemedTitles.has(reward.title)) return acc;
+      
+      const category = reward.userCategory;
+      if (!acc[category]) {
+        acc[category] = { icon: predefinedRewardGroups.find(g => g.userCategory === category)?.icon || Gift, items: [] };
+      }
+      acc[category].items.push(reward);
+      return acc;
+    }, {} as Record<string, { icon: React.ElementType, items: PredefinedRewardIdea[] }>);
+  }, [child, rewardInstances, allPredefinedRewards]);
 
-    return predefinedRewardGroups.reduce((acc, group) => {
-        const availableItems = group.items.filter(template => {
-            return template.starsCost !== undefined &&
-                   child.stars >= template.starsCost &&
-                   !alreadyPendingOrRedeemed.has(template.title);
-        });
-        if(availableItems.length > 0) {
-            acc[group.userCategory] = {
-                icon: group.icon,
-                items: availableItems
-            };
-        }
-        return acc;
-    }, {} as Record<string, { icon: React.ElementType, items: typeof predefinedRewardGroups[0]['items'] }>);
-  }, [child, pendingRedemptions]);
-
-  const goalRewardsByCategory = useMemo(() => {
-    if (!child) return {};
-    const alreadyPendingOrRedeemed = new Set(pendingRedemptions.map(r => r.title));
-
-    return predefinedRewardGroups.reduce((acc, group) => {
-        const goalItems = group.items.filter(template => {
-            return template.starsCost !== undefined &&
-                   child.stars < template.starsCost &&
-                   !alreadyPendingOrRedeemed.has(template.title);
-        });
-        if(goalItems.length > 0) {
-            acc[group.userCategory] = {
-                icon: group.icon,
-                items: goalItems.sort((a,b) => a.starsCost! - b.starsCost!)
-            };
-        }
-        return acc;
-    }, {} as Record<string, { icon: React.ElementType, items: typeof predefinedRewardGroups[0]['items'] }>);
-  }, [child, pendingRedemptions]);
+  const pendingRedemptions = useMemo(() => {
+    return rewardInstances.filter(r => r.status === 'pending_approval');
+  }, [rewardInstances]);
 
 
   if (isLoading || !child) {
     return <Loading />;
   }
-
-  const totalAvailable = Object.values(availableRewardsByCategory).reduce((sum, group) => sum + group.items.length, 0);
 
   return (
     <div className="p-4 pb-24 space-y-8">
@@ -136,40 +204,28 @@ export default function ChildRewardsPage() {
         </div>
       </div>
       
-      <section>
-        <h2 className="text-lg font-semibold mb-3 flex items-center gap-2"><Sparkles className="h-5 w-5 text-green-500"/>Disponíveis para Resgate</h2>
-         {totalAvailable > 0 ? (
-            <Accordion type="multiple" className="w-full space-y-2">
-                 {Object.entries(availableRewardsByCategory).map(([category, group]) => (
-                    <AccordionItem key={category} value={category} className="border rounded-lg bg-card text-card-foreground shadow-sm">
-                         <AccordionTrigger className="p-3 hover:no-underline text-left">
-                            <div className="flex items-center justify-between w-full">
-                                <span className="font-semibold flex items-center gap-2">
-                                    <group.icon className="h-5 w-5 text-primary" /> {category}
-                                </span>
-                                <Badge variant="secondary" className="mr-2">{group.items.length}</Badge>
-                            </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="p-4 pt-2">
-                             <div className="space-y-2 border-t pt-3">
-                                {group.items.map(reward => (
-                                    <div key={reward.title} className="p-2 rounded-md hover:bg-muted/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                                        <p className="font-medium text-sm flex-grow">{reward.title}</p>
-                                        <div className="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
-                                            <Badge variant="outline" className="font-semibold">{reward.starsCost} <Star className="ml-1.5 h-3 w-3 text-yellow-500" /></Badge>
-                                            <Button size="xs" variant="default" className="h-6 text-xs px-3" onClick={() => setRewardToRedeem(reward)}>Resgatar</Button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </AccordionContent>
-                    </AccordionItem>
-                ))}
-            </Accordion>
-        ) : (
-          <p className="text-sm text-center text-muted-foreground py-6">Continue juntando estrelas! Suas próximas recompensas aparecerão aqui.</p>
-        )}
-      </section>
+      {favoriteRewards.length > 0 && (
+          <section>
+             <h2 className="text-lg font-semibold mb-3 flex items-center gap-2"><Heart className="h-5 w-5 text-pink-500 fill-pink-500"/> Minha Lista de Sonhos</h2>
+             <ScrollArea>
+                <div className="flex space-x-4 pb-4">
+                    {favoriteRewards.map(reward => (
+                       <div key={reward.title} className="w-64 flex-shrink-0">
+                           <RewardCard
+                                reward={reward}
+                                childStars={child.stars}
+                                isFavorited={true}
+                                onToggleFavorite={handleToggleFavorite}
+                                onRedeem={setRewardToRedeem}
+                                isProcessing={isProcessing}
+                            />
+                       </div>
+                    ))}
+                </div>
+                <ScrollBar orientation="horizontal" />
+             </ScrollArea>
+          </section>
+      )}
 
       {pendingRedemptions.length > 0 && (
          <>
@@ -195,38 +251,36 @@ export default function ChildRewardsPage() {
       <Separator />
 
       <section>
-        <h2 className="text-lg font-semibold mb-3 flex items-center gap-2"><Gift className="h-5 w-5 text-primary"/>Próximas Metas</h2>
-         {Object.keys(goalRewardsByCategory).length > 0 ? (
-             <Accordion type="multiple" className="w-full space-y-2">
-                 {Object.entries(goalRewardsByCategory).map(([category, group]) => (
-                    <AccordionItem key={category} value={category} className="border rounded-lg bg-card text-card-foreground shadow-sm">
-                         <AccordionTrigger className="p-3 hover:no-underline text-left">
-                            <div className="flex items-center justify-between w-full">
-                                <span className="font-semibold flex items-center gap-2">
-                                    <group.icon className="h-5 w-5 text-primary/70" /> {category}
-                                </span>
-                                <Badge variant="outline" className="mr-2">{group.items.length}</Badge>
-                            </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="p-4 pt-2">
-                             <div className="space-y-2 border-t pt-3">
-                                {group.items.map(reward => (
-                                   <div key={reward.title} className="p-2 rounded-md bg-muted/40 flex items-center justify-between">
-                                        <p className="font-semibold text-sm text-foreground line-clamp-2 pr-4">{reward.title}</p>
-                                        <div className="flex items-center gap-2 text-xs font-semibold text-primary">
-                                            <span>Faltam {reward.starsCost! - child.stars}</span>
-                                            <Star className="h-3 w-3" />
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </AccordionContent>
-                    </AccordionItem>
-                ))}
-            </Accordion>
-        ) : (
-          <p className="text-sm text-center text-muted-foreground py-6">Você já pode resgatar todas as recompensas disponíveis. Uau!</p>
-        )}
+        <h2 className="text-lg font-semibold mb-3 flex items-center gap-2"><PackagePlus className="h-5 w-5 text-green-500"/>Catálogo de Tesouros</h2>
+        <Accordion type="multiple" defaultValue={Object.keys(availableRewardsByCategory)} className="w-full space-y-2">
+             {Object.entries(availableRewardsByCategory).map(([category, group]) => (
+                <AccordionItem key={category} value={category} className="border rounded-lg bg-card text-card-foreground shadow-sm">
+                     <AccordionTrigger className="p-3 hover:no-underline text-left">
+                        <div className="flex items-center justify-between w-full">
+                            <span className="font-semibold flex items-center gap-2">
+                                <group.icon className="h-5 w-5 text-primary" /> {category}
+                            </span>
+                            <Badge variant="secondary" className="mr-2">{group.items.length}</Badge>
+                        </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="p-4 pt-2">
+                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t pt-3">
+                            {group.items.map(reward => (
+                                <RewardCard
+                                    key={reward.title}
+                                    reward={reward}
+                                    childStars={child.stars}
+                                    isFavorited={child.favoriteRewardIds?.includes(reward.title) || false}
+                                    onToggleFavorite={handleToggleFavorite}
+                                    onRedeem={setRewardToRedeem}
+                                    isProcessing={isProcessing}
+                                />
+                            ))}
+                        </div>
+                    </AccordionContent>
+                </AccordionItem>
+            ))}
+        </Accordion>
       </section>
       
        {rewardToRedeem && (
