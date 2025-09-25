@@ -620,11 +620,6 @@ export function MuralCompletoPageContent() {
     }
   };
 
-  const filteredChildRewards = useMemo(() => {
-    if (instanceStatusFilter === 'all') return childRewards;
-    return childRewards.filter(reward => reward.status === instanceStatusFilter);
-  }, [childRewards, instanceStatusFilter]);
-  
   const availableForRedemption = useMemo(() => {
     if (!child || rewardTemplates.length === 0) return [];
     const assignedTemplateIds = new Set(childRewards.map(cr => cr.templateId));
@@ -634,6 +629,13 @@ export function MuralCompletoPageContent() {
       child.stars >= template.starsCost
     );
   }, [child, rewardTemplates, childRewards]);
+
+
+  const filteredChildRewards = useMemo(() => {
+    if (instanceStatusFilter === 'all') return childRewards;
+    return childRewards.filter(reward => reward.status === instanceStatusFilter);
+  }, [childRewards, instanceStatusFilter]);
+  
 
 
   const filteredMissions = useMemo(() => {
@@ -1261,5 +1263,3 @@ export function MuralCompletoPageContent() {
     </div>
   );
 }
-
-    
