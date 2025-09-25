@@ -620,11 +620,12 @@ export function MuralCompletoPageContent() {
     }
   };
   
-    const availableForRedemption = rewardTemplates.filter(template => {
-        if (!child || template.status !== 'active') return false;
-        const isAlreadyAssigned = childRewards.some(cr => cr.templateId === template.id);
-        return !isAlreadyAssigned && child.stars >= template.starsCost;
-    }).sort((a,b) => a.starsCost - b.starsCost);
+    const availableForRedemption = useMemo(() => {
+        if (!child) return [];
+        return rewardTemplates.filter(template => {
+            return template.status === 'active' && template.starsCost <= child.stars;
+        });
+    }, [child, rewardTemplates]);
 
 
   const filteredChildRewards = useMemo(() => {
@@ -1259,3 +1260,5 @@ export function MuralCompletoPageContent() {
     </div>
   );
 }
+
+    
