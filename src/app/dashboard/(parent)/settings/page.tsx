@@ -82,39 +82,6 @@ export default function SettingsPage() {
       
        <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Star className="h-5 w-5 text-chart-2" />Recompensas</CardTitle>
-          <CardDescription>Defina como as recompensas são gerenciadas no seu espaço.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5 mb-2 sm:mb-0">
-                    <Label className="text-base">Modo de Recompensa</Label>
-                    <p className="text-sm text-muted-foreground">
-                       {rewardMode === 'automatic'
-                         ? "Todas as recompensas do catálogo ficam disponíveis para as crianças por padrão."
-                         : "Você precisa atribuir manualmente cada recompensa do catálogo para cada criança."
-                       }
-                    </p>
-                </div>
-                <Select
-                  value={rewardMode}
-                  onValueChange={(value) => handleSettingChange('rewardMode', value)}
-                  disabled={isSaving}
-                >
-                    <SelectTrigger className="w-full sm:w-[180px]">
-                        <SelectValue placeholder="Selecione o modo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="automatic">Automático</SelectItem>
-                        <SelectItem value="manual">Manual</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
             <CardTitle className="flex items-center gap-2"><Zap className="h-5 w-5 text-chart-1" />Próximas Funcionalidades</CardTitle>
             <CardDescription>Nos ajude a priorizar o que construiremos a seguir! Seu voto é importante.</CardDescription>
         </CardHeader>
