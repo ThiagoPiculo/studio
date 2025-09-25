@@ -245,4 +245,5 @@ export default function ChildRewardsPage() {
 
     </div>
   );
-}
+
+    
