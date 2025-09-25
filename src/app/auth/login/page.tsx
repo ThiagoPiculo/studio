@@ -2,15 +2,15 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowRight, Shield, UserCircle } from 'lucide-react';
+import { ArrowRight, Shield, UserCircle, Rocket } from 'lucide-react';
 import Image from 'next/image';
 
 export default function LoginPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-transparent p-4 selection:bg-accent selection:text-accent-foreground">
        <div className="flex items-center gap-3 mb-8">
-         <div className="relative w-10 h-10">
-          <Image src="/logo.png" alt="Mini Heróis Logo" fill sizes="40px" style={{objectFit: "contain"}} />
+         <div className="relative w-10 h-10 p-2 bg-primary/10 rounded-xl flex items-center justify-center">
+            <Rocket className="h-6 w-6 text-primary" />
          </div>
          <h1 className="text-4xl font-bold font-headline text-primary">Mini Heróis</h1>
        </div>

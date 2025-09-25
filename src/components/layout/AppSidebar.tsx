@@ -20,13 +20,13 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from "@/components/ui/accordion"
-import { Users, CalendarDays, Target, Gift, Link as LinkIcon, NotebookPen, Medal, UserPlus, Home, PlusCircle, View, ChevronsUpDown, Menu, Sparkles, User, CalendarCheck, Settings, Radar, Contact, CircleDot, HelpCircle } from 'lucide-react';
+import { Users, CalendarDays, Target, Gift, Link as LinkIcon, NotebookPen, Medal, UserPlus, Home, PlusCircle, View, ChevronsUpDown, Menu, Sparkles, User, CalendarCheck, Settings, Radar, Contact, CircleDot, HelpCircle, Rocket } from 'lucide-react';
 import { UserNav } from './UserNav';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useFamily } from '@/contexts/FamilyContext';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { Calendar1Icon } from '../icons/Calendar1Icon';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
@@ -35,8 +35,8 @@ function AppLogo() {
     return (
         <div className="flex h-10 items-center justify-between px-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
             <Link href="/dashboard" className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
-                <div className="relative w-7 h-7">
-                  <Image src="/logo.png" alt="Mini Heróis Logo" fill sizes="28px" style={{objectFit:"contain"}}/>
+                <div className="relative w-7 h-7 p-1 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <Rocket className="h-5 w-5 text-primary" />
                 </div>
                 <span className="font-headline text-xl font-bold text-foreground">
                     Mini Heróis
