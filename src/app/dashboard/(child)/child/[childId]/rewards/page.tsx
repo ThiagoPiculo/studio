@@ -78,19 +78,52 @@ export default function ChildRewardsPage() {
     }
   };
 
+  const availableRewardsByCategory = useMemo(() => {
+    if (!child) return {};
+    const alreadyPendingOrRedeemed = new Set(pendingRedemptions.map(r => r.title));
+
+    return predefinedRewardGroups.reduce((acc, group) => {
+        const availableItems = group.items.filter(template => {
+            return template.starsCost !== undefined &&
+                   child.stars >= template.starsCost &&
+                   !alreadyPendingOrRedeemed.has(template.title);
+        });
+        if(availableItems.length > 0) {
+            acc[group.userCategory] = {
+                icon: group.icon,
+                items: availableItems
+            };
+        }
+        return acc;
+    }, {} as Record<string, { icon: React.ElementType, items: typeof predefinedRewardGroups[0]['items'] }>);
+  }, [child, pendingRedemptions]);
+
+  const goalRewardsByCategory = useMemo(() => {
+    if (!child) return {};
+    const alreadyPendingOrRedeemed = new Set(pendingRedemptions.map(r => r.title));
+
+    return predefinedRewardGroups.reduce((acc, group) => {
+        const goalItems = group.items.filter(template => {
+            return template.starsCost !== undefined &&
+                   child.stars < template.starsCost &&
+                   !alreadyPendingOrRedeemed.has(template.title);
+        });
+        if(goalItems.length > 0) {
+            acc[group.userCategory] = {
+                icon: group.icon,
+                items: goalItems.sort((a,b) => a.starsCost! - b.starsCost!)
+            };
+        }
+        return acc;
+    }, {} as Record<string, { icon: React.ElementType, items: typeof predefinedRewardGroups[0]['items'] }>);
+  }, [child, pendingRedemptions]);
+
+
   if (isLoading || !child) {
     return <Loading />;
   }
 
-  const alreadyPendingOrRedeemed = new Set(pendingRedemptions.map(r => r.title));
-
-  const availableRewards = rewardTemplates
-    .filter(r => child.stars >= r.starsCost! && !alreadyPendingOrRedeemed.has(r.title))
-    .sort((a,b) => a.starsCost! - b.starsCost!);
-
-  const goalRewards = rewardTemplates
-    .filter(r => child.stars < r.starsCost! && !alreadyPendingOrRedeemed.has(r.title))
-    .sort((a,b) => a.starsCost! - b.starsCost!);
+  const totalAvailable = Object.values(availableRewardsByCategory).reduce((sum, group) => sum + group.items.length, 0);
 
   return (
     <div className="p-4 pb-24 space-y-8">
@@ -105,22 +138,34 @@ export default function ChildRewardsPage() {
       
       <section>
         <h2 className="text-lg font-semibold mb-3 flex items-center gap-2"><Sparkles className="h-5 w-5 text-green-500"/>Disponíveis para Resgate</h2>
-        {availableRewards.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3">
-            {availableRewards.map(reward => (
-              <Card key={reward.title} className="bg-green-500/5 border-green-500/20 shadow-sm flex flex-col">
-                <CardHeader className="p-3 flex-grow">
-                  <p className="font-semibold text-sm leading-tight line-clamp-2">{reward.title}</p>
-                </CardHeader>
-                <CardContent className="p-3 pt-0 flex items-center justify-between">
-                    <Badge variant="secondary" className="font-semibold border-amber-500/20 h-6 text-xs">
-                       {reward.starsCost} <Star className="ml-1.5 h-3 w-3 fill-yellow-400 text-yellow-500" />
-                    </Badge>
-                     <Button size="xs" className="h-6 text-xs" onClick={() => setRewardToRedeem(reward as any)}>Resgatar</Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+         {totalAvailable > 0 ? (
+            <Accordion type="multiple" className="w-full space-y-2">
+                 {Object.entries(availableRewardsByCategory).map(([category, group]) => (
+                    <AccordionItem key={category} value={category} className="border rounded-lg bg-card text-card-foreground shadow-sm">
+                         <AccordionTrigger className="p-3 hover:no-underline text-left">
+                            <div className="flex items-center justify-between w-full">
+                                <span className="font-semibold flex items-center gap-2">
+                                    <group.icon className="h-5 w-5 text-primary" /> {category}
+                                </span>
+                                <Badge variant="secondary" className="mr-2">{group.items.length}</Badge>
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="p-4 pt-2">
+                             <div className="space-y-2 border-t pt-3">
+                                {group.items.map(reward => (
+                                    <div key={reward.title} className="p-2 rounded-md hover:bg-muted/50 flex items-center justify-between">
+                                        <p className="font-medium text-sm">{reward.title}</p>
+                                        <div className="flex items-center gap-2">
+                                            <Badge variant="outline" className="font-semibold">{reward.starsCost} <Star className="ml-1.5 h-3 w-3 text-yellow-500" /></Badge>
+                                            <Button size="xs" variant="default" className="h-6 text-xs" onClick={() => setRewardToRedeem(reward)}>Resgatar</Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </AccordionContent>
+                    </AccordionItem>
+                ))}
+            </Accordion>
         ) : (
           <p className="text-sm text-center text-muted-foreground py-6">Continue juntando estrelas! Suas próximas recompensas aparecerão aqui.</p>
         )}
@@ -151,25 +196,34 @@ export default function ChildRewardsPage() {
 
       <section>
         <h2 className="text-lg font-semibold mb-3 flex items-center gap-2"><Gift className="h-5 w-5 text-primary"/>Próximas Metas</h2>
-         {goalRewards.length > 0 ? (
-            <div className="grid grid-cols-2 gap-3">
-                {goalRewards.map(reward => (
-                    <Card key={reward.title} className="relative overflow-hidden bg-muted/40 flex flex-col">
-                        <CardContent className="p-3 flex-grow">
-                            <div className="flex items-start justify-between">
-                                <p className="font-semibold text-sm text-foreground line-clamp-2 pr-4">{reward.title}</p>
-                                <Lock className="h-4 w-4 text-muted-foreground/50 flex-shrink-0" />
+         {Object.keys(goalRewardsByCategory).length > 0 ? (
+             <Accordion type="multiple" className="w-full space-y-2">
+                 {Object.entries(goalRewardsByCategory).map(([category, group]) => (
+                    <AccordionItem key={category} value={category} className="border rounded-lg bg-card text-card-foreground shadow-sm">
+                         <AccordionTrigger className="p-3 hover:no-underline text-left">
+                            <div className="flex items-center justify-between w-full">
+                                <span className="font-semibold flex items-center gap-2">
+                                    <group.icon className="h-5 w-5 text-primary/70" /> {category}
+                                </span>
+                                <Badge variant="outline" className="mr-2">{group.items.length}</Badge>
                             </div>
-                        </CardContent>
-                        <div className="p-2 border-t flex items-center justify-between">
-                             <Badge variant="outline" className="text-xs font-semibold h-6">
-                                {reward.starsCost} <Star className="ml-1.5 h-3 w-3 text-muted-foreground/50"/>
-                            </Badge>
-                             <div className="text-xs font-semibold text-primary">Faltam {reward.starsCost! - child.stars}!</div>
-                        </div>
-                    </Card>
+                        </AccordionTrigger>
+                        <AccordionContent className="p-4 pt-2">
+                             <div className="space-y-2 border-t pt-3">
+                                {group.items.map(reward => (
+                                   <div key={reward.title} className="p-2 rounded-md bg-muted/40 flex items-center justify-between">
+                                        <p className="font-semibold text-sm text-foreground line-clamp-2 pr-4">{reward.title}</p>
+                                        <div className="flex items-center gap-2 text-xs font-semibold text-primary">
+                                            <span>Faltam {reward.starsCost! - child.stars}</span>
+                                            <Star className="h-3 w-3" />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </AccordionContent>
+                    </AccordionItem>
                 ))}
-              </div>
+            </Accordion>
         ) : (
           <p className="text-sm text-center text-muted-foreground py-6">Você já pode resgatar todas as recompensas disponíveis. Uau!</p>
         )}
