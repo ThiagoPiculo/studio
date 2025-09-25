@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -66,18 +65,29 @@ export default function ChildRewardsPage() {
   const { availableRewards, goalRewards } = useMemo(() => {
     if (!child) return { availableRewards: [], goalRewards: [] };
 
+    // IDs das recompensas que já estão aguardando aprovação
     const pendingTemplateIds = new Set(pendingRedemptions.map(r => r.templateId));
     
-    const available = allRewards.filter(r => 
-        child.stars >= r.starsCost && !pendingTemplateIds.has(r.id)
-    ).sort((a,b) => a.starsCost - b.starsCost);
+    // Custo total das recompensas pendentes
+    const starsCommitted = pendingRedemptions.reduce((sum, r) => sum + r.starsCost, 0);
     
-    const goals = allRewards.filter(r => 
-        child.stars < r.starsCost && !pendingTemplateIds.has(r.id)
-    ).sort((a,b) => a.starsCost - b.starsCost);
+    // Saldo de estrelas efetivo que a criança pode usar para novas recompensas
+    const effectiveStars = child.stars - starsCommitted;
+
+    // Filtra as recompensas do catálogo que ainda não foram solicitadas
+    const unrequestedRewards = allRewards.filter(r => !pendingTemplateIds.has(r.id));
+    
+    const available = unrequestedRewards
+      .filter(r => effectiveStars >= r.starsCost)
+      .sort((a,b) => a.starsCost - b.starsCost);
+    
+    const goals = unrequestedRewards
+      .filter(r => effectiveStars < r.starsCost)
+      .sort((a,b) => a.starsCost - b.starsCost);
     
     return { availableRewards: available, goalRewards: goals };
   }, [allRewards, child, pendingRedemptions]);
+
 
   const goalRewardsByCategory = useMemo(() => {
     const grouped: Record<string, RewardTemplate[]> = {};
@@ -254,3 +264,4 @@ export default function ChildRewardsPage() {
     
 
     
+
