@@ -21,10 +21,10 @@ function LandingPageHeader() {
           <span className="text-xl font-bold font-headline">Mini Heróis</span>
         </Link>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" asChild>
+          <Button asChild>
             <Link href="/auth/login">Login</Link>
           </Button>
-          <Button asChild>
+          <Button variant="ghost" asChild>
             <Link href="/auth/register">Comece Grátis</Link>
           </Button>
         </div>
