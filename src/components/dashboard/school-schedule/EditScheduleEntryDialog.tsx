@@ -43,6 +43,7 @@ const scheduleEntrySchema = z.object({
   startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Use o formato HH:mm."),
   endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Use o formato HH:mm."),
   color: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Cor inválida."),
+  consecutiveClasses: z.coerce.number().min(1).max(3).default(1),
 }).refine(data => data.startTime < data.endTime, {
   message: "O horário final deve ser depois do inicial.",
   path: ["endTime"],
@@ -82,6 +83,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
             startTime: '08:00',
             endTime: '08:50', // Default 50 min duration
             color: '#93C5FD',
+            consecutiveClasses: 1,
         }
     });
 
@@ -93,6 +95,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                 startTime: entryToEdit.startTime,
                 endTime: entryToEdit.endTime,
                 color: entryToEdit.color,
+                consecutiveClasses: 1,
             });
         } else {
              const defaultStartTime = child?.schoolShiftStart || '08:00';
@@ -107,21 +110,28 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                 startTime: defaultStartTime,
                 endTime: format(endDate, 'HH:mm'),
                 color: schoolSubjects.find(s => s.label === "Português")?.color || '#93C5FD',
+                consecutiveClasses: 1,
             });
         }
-    }, [entryToEdit, form, child]);
+    }, [entryToEdit, form, child, isOpen]);
     
-    // Auto-update end time when start time changes
+    // Auto-update end time when start time or subject changes
     const watchedStartTime = form.watch('startTime');
+    const watchedSubject = form.watch('subject');
+    const watchedConsecutiveClasses = form.watch('consecutiveClasses');
+
     useEffect(() => {
-        if (watchedStartTime && form.formState.dirtyFields.startTime) {
+        if (watchedStartTime && (form.formState.dirtyFields.startTime || form.formState.dirtyFields.subject || form.formState.dirtyFields.consecutiveClasses)) {
+            const isRecess = watchedSubject === 'Recreio/Intervalo';
+            const duration = isRecess ? 20 : 50 * (watchedConsecutiveClasses || 1);
+            
             const [hours, minutes] = watchedStartTime.split(':').map(Number);
             const startDate = new Date();
             startDate.setHours(hours, minutes);
-            const endDate = addMinutes(startDate, 50);
+            const endDate = addMinutes(startDate, duration);
             form.setValue('endTime', format(endDate, 'HH:mm'), { shouldValidate: true });
         }
-    }, [watchedStartTime, form]);
+    }, [watchedStartTime, watchedSubject, watchedConsecutiveClasses, form]);
 
 
     const onSubmit = async (data: FormValues) => {
@@ -155,15 +165,35 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                 onSave(updatedEntry); // Pass single updated entry
                 toast({ title: 'Aula atualizada!', description: `A aula de ${payload.subject} foi atualizada no horário.` });
             } else {
-                const newEntryData = {
-                    ...payload,
-                    childId: child.id,
-                    ownerId: user.uid,
-                    familyId: currentContext === 'my-space' ? null : currentContext,
-                };
-                const newEntry = await addSchoolScheduleEntry(newEntryData, user);
-                onSave(newEntry); // Pass single new entry
-                toast({ title: 'Nova aula adicionada!', description: `A aula de ${payload.subject} foi adicionada ao horário.` });
+                 const classCount = payload.consecutiveClasses || 1;
+                 const durationPerClass = 50;
+                 const newEntries : SchoolScheduleEntry[] = [];
+                 let currentStartTime = payload.startTime;
+
+                 for (let i = 0; i < classCount; i++) {
+                     const [startHour, startMinute] = currentStartTime.split(':').map(Number);
+                     const startDate = new Date();
+                     startDate.setHours(startHour, startMinute);
+                     const endDate = addMinutes(startDate, durationPerClass);
+                     const endTime = format(endDate, 'HH:mm');
+
+                     const newEntryData = {
+                        subject: payload.subject,
+                        dayOfWeek: payload.dayOfWeek,
+                        startTime: currentStartTime,
+                        endTime: endTime,
+                        color: payload.color,
+                        childId: child.id,
+                        ownerId: user.uid,
+                        familyId: currentContext === 'my-space' ? null : currentContext,
+                    };
+                    const newEntry = await addSchoolScheduleEntry(newEntryData, user);
+                    newEntries.push(newEntry);
+                    currentStartTime = endTime; // Set start time for the next iteration
+                 }
+
+                onSave(newEntries); 
+                toast({ title: `Nova(s) aula(s) adicionada(s)!`, description: `${classCount} aula(s) de ${payload.subject} foi/foram adicionada(s) ao horário.` });
             }
             onOpenChange(false);
         } catch (error) {
@@ -302,6 +332,26 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                         <FormMessage />
                                     </FormItem>
                                 )} />
+                                 {form.watch('subject') !== 'Recreio/Intervalo' && !entryToEdit && (
+                                     <FormField
+                                        control={form.control}
+                                        name="consecutiveClasses"
+                                        render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Aulas Seguidas</FormLabel>
+                                            <Select onValueChange={(v) => field.onChange(parseInt(v))} value={String(field.value)}>
+                                                <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="1">1 aula (50 min)</SelectItem>
+                                                    <SelectItem value="2">2 aulas (1h 40min)</SelectItem>
+                                                    <SelectItem value="3">3 aulas (2h 30min)</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormDescription>Para aulas duplas ou triplas.</FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
+                                 )}
                                 <div className="grid grid-cols-2 gap-4">
                                     <FormField control={form.control} name="startTime" render={({ field }) => (
                                         <FormItem>

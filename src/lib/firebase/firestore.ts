@@ -2059,9 +2059,9 @@ export const deleteFutureOccurrences = async (instanceId: string, fromDate: Date
 
 export const deleteMissionInstancesByTemplateAndChild = async (actor: UserProfile, templateId: string, childId: string): Promise<void> => {
     const q = query(
-        collection(db, 'missionInstances'),
-        where('templateId', '==', templateId),
-        where('childId', '==', childId)
+        collection(db, "missionInstances"),
+        where("templateId", "==", templateId),
+        where("childId", "==", childId)
     );
     const querySnapshot = await getDocs(q);
     if (querySnapshot.empty) {
@@ -2757,6 +2757,7 @@ export const populateInitialRewardTemplates = async (userId: string, familyId: s
 
 
     
+
 
 
 
