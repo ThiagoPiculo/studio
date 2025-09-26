@@ -34,7 +34,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { heroColors } from '@/lib/hero-colors';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { format, addMinutes } from 'date-fns';
+import { format, addMinutes, parse } from 'date-fns';
 import { Input } from '@/components/ui/input';
 
 const scheduleEntrySchema = z.object({
@@ -87,52 +87,84 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
         }
     });
 
-    useEffect(() => {
-        if (entryToEdit) {
-            form.reset({
-                subject: entryToEdit.subject,
-                dayOfWeek: entryToEdit.dayOfWeek,
-                startTime: entryToEdit.startTime,
-                endTime: entryToEdit.endTime,
-                color: entryToEdit.color,
-                consecutiveClasses: 1,
-            });
-        } else {
-             const defaultStartTime = child?.schoolShiftStart || '08:00';
-             const [startHourStr, startMinuteStr] = defaultStartTime.split(':');
-             const startDate = new Date();
-             startDate.setHours(parseInt(startHourStr), parseInt(startMinuteStr));
-             const endDate = addMinutes(startDate, 50);
-
-            form.reset({
-                subject: '',
-                dayOfWeek: 'MO',
-                startTime: defaultStartTime,
-                endTime: format(endDate, 'HH:mm'),
-                color: schoolSubjects.find(s => s.label === "Português")?.color || '#93C5FD',
-                consecutiveClasses: 1,
-            });
-        }
-    }, [entryToEdit, form, child, isOpen]);
+    const watchedSubject = form.watch('subject');
     
     // Auto-update end time when start time or subject changes
     const watchedStartTime = form.watch('startTime');
-    const watchedSubject = form.watch('subject');
     const watchedConsecutiveClasses = form.watch('consecutiveClasses');
 
     useEffect(() => {
-        if (watchedStartTime && (form.formState.dirtyFields.startTime || form.formState.dirtyFields.subject || form.formState.dirtyFields.consecutiveClasses)) {
-            const isRecess = watchedSubject === 'Recreio/Intervalo';
-            const duration = isRecess ? 20 : 50 * (watchedConsecutiveClasses || 1);
-            
-            const [hours, minutes] = watchedStartTime.split(':').map(Number);
+        if (!isOpen) return; // Only run logic when dialog is open and values are stable
+        
+        let startTimeToUse = watchedStartTime;
+        let subjectToUse = watchedSubject;
+
+        // If creating new, set smart defaults
+        if (!entryToEdit) {
+            if (subjectToUse === 'Recreio/Intervalo') {
+                const shift = child?.schoolShift;
+                const shiftStart = child?.schoolShiftStart;
+                if ((shift === 'morning' || shift === 'full_time') && shiftStart) {
+                     const [h, m] = shiftStart.split(':').map(Number);
+                     const start = new Date();
+                     start.setHours(h, m);
+                     const recessStart = addMinutes(start, 100); // After 2 classes
+                     startTimeToUse = format(recessStart, 'HH:mm');
+                     form.setValue('startTime', startTimeToUse, { shouldValidate: true });
+                } else {
+                    startTimeToUse = '09:40'; // Fallback
+                    form.setValue('startTime', startTimeToUse, { shouldValidate: true });
+                }
+            }
+        } else {
+            startTimeToUse = entryToEdit.startTime;
+            subjectToUse = entryToEdit.subject;
+        }
+
+        const isRecess = subjectToUse === 'Recreio/Intervalo';
+        const duration = isRecess ? 20 : 50 * (watchedConsecutiveClasses || 1);
+        
+        try {
+            const [hours, minutes] = (startTimeToUse || "08:00").split(':').map(Number);
             const startDate = new Date();
             startDate.setHours(hours, minutes);
             const endDate = addMinutes(startDate, duration);
             form.setValue('endTime', format(endDate, 'HH:mm'), { shouldValidate: true });
+        } catch(e) {
+            console.error("Error setting end time", e);
         }
-    }, [watchedStartTime, watchedSubject, watchedConsecutiveClasses, form]);
 
+    }, [watchedStartTime, watchedSubject, watchedConsecutiveClasses, form, entryToEdit, child, isOpen]);
+
+    useEffect(() => {
+        if (isOpen) {
+             if (entryToEdit) {
+                form.reset({
+                    subject: entryToEdit.subject,
+                    dayOfWeek: entryToEdit.dayOfWeek,
+                    startTime: entryToEdit.startTime,
+                    endTime: entryToEdit.endTime,
+                    color: entryToEdit.color,
+                    consecutiveClasses: 1,
+                });
+            } else {
+                const defaultStartTime = child?.schoolShiftStart || '08:00';
+                const [startHourStr, startMinuteStr] = defaultStartTime.split(':');
+                const startDate = new Date();
+                startDate.setHours(parseInt(startHourStr), parseInt(startMinuteStr));
+                const endDate = addMinutes(startDate, 50);
+
+                form.reset({
+                    subject: '',
+                    dayOfWeek: 'MO',
+                    startTime: defaultStartTime,
+                    endTime: format(endDate, 'HH:mm'),
+                    color: schoolSubjects.find(s => s.label === "Português")?.color || '#93C5FD',
+                    consecutiveClasses: 1,
+                });
+            }
+        }
+    }, [entryToEdit, child, isOpen, form]);
 
     const onSubmit = async (data: FormValues) => {
         if (!user || !child) {
