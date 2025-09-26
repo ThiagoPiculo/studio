@@ -1,5 +1,3 @@
-
-
 // NOTA: Este arquivo define o layout para o grupo de rotas '(parent)'.
 // Qualquer página dentro do diretório /dashboard/(parent)/... herdará esta
 // interface com a barra lateral, cabeçalho e rodapé. O nome '(parent)' é
@@ -17,7 +15,7 @@ import { AppSidebar } from '@/components/layout/AppSidebar';
 import { Notifications } from '@/components/layout/Notifications';
 import { FamilyContextSwitcher } from '@/components/layout/FamilyContextSwitcher';
 import { Button } from '@/components/ui/button';
-import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { BottomNavbar } from '@/components/layout/BottomNavbar';
 import { Sheet } from '@/components/ui/sheet';
