@@ -34,7 +34,7 @@ import { useToast } from '@/hooks/use-toast';
 
 function SchoolSchedulePageContent() {
     const { user, loading: authLoading } = useAuth();
-    const { currentContext, childrenInContext, isLoading: isFamilyLoading } = useFamily();
+    const { currentContext, childrenInContext, isLoading: isFamilyLoading, selectedChildId } = useFamily();
     
     const [scheduleEntries, setScheduleEntries] = useState<SchoolScheduleEntry[]>([]);
     const [isLoadingSchedule, setIsLoadingSchedule] = useState(true);
@@ -126,6 +126,11 @@ function SchoolSchedulePageContent() {
         return allWeekdays.filter(day => selectedDays.includes(day));
     }, [selectedDays]);
 
+    const childrenToDisplay = useMemo(() => {
+        if (!selectedChildId) return childrenInContext;
+        return childrenInContext.filter(child => child.id === selectedChildId);
+    }, [childrenInContext, selectedChildId]);
+
 
     if (authLoading || isFamilyLoading) {
         return <Loading />;
@@ -178,7 +183,7 @@ function SchoolSchedulePageContent() {
             </Card>
 
             <div className="space-y-8">
-                {childrenInContext.map(child => (
+                {childrenToDisplay.map(child => (
                     <Card key={child.id} className="shadow-md">
                         <CardHeader>
                             <div className="flex items-center justify-between">
@@ -196,7 +201,7 @@ function SchoolSchedulePageContent() {
                                 </div>
                                  <Button size="sm" onClick={() => handleAddEntry(child)}>
                                     <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Aula
-                                </Button>
+                                 </Button>
                             </div>
                         </CardHeader>
                         <CardContent>
