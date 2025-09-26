@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -17,7 +16,7 @@ import { addSchoolScheduleEntry, updateSchoolScheduleEntry, addRecurringSchoolEn
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { TimePicker } from './TimePicker';
+import { TimePicker } from '../missions/TimePicker';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,7 +34,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { heroColors } from '@/lib/hero-colors';
 import { ScrollArea } from '@/components/ui/scroll-area';
-
+import { format, addMinutes } from 'date-fns';
+import { Input } from '@/components/ui/input';
 
 const scheduleEntrySchema = z.object({
   subject: z.string().min(2, { message: "O nome da matéria deve ter pelo menos 2 caracteres." }),
@@ -80,7 +80,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
             subject: '',
             dayOfWeek: 'MO',
             startTime: '08:00',
-            endTime: '09:00',
+            endTime: '08:50', // Default 50 min duration
             color: '#93C5FD',
         }
     });
@@ -97,19 +97,32 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
         } else {
              const defaultStartTime = child?.schoolShiftStart || '08:00';
              const [startHourStr, startMinuteStr] = defaultStartTime.split(':');
-             const startHour = parseInt(startHourStr, 10);
-             const endHour = startHour + 1;
-             const defaultEndTime = `${endHour.toString().padStart(2, '0')}:${startMinuteStr}`;
+             const startDate = new Date();
+             startDate.setHours(parseInt(startHourStr), parseInt(startMinuteStr));
+             const endDate = addMinutes(startDate, 50);
 
             form.reset({
                 subject: '',
                 dayOfWeek: 'MO',
                 startTime: defaultStartTime,
-                endTime: defaultEndTime,
+                endTime: format(endDate, 'HH:mm'),
                 color: schoolSubjects.find(s => s.label === "Português")?.color || '#93C5FD',
             });
         }
     }, [entryToEdit, form, child]);
+    
+    // Auto-update end time when start time changes
+    const watchedStartTime = form.watch('startTime');
+    useEffect(() => {
+        if (watchedStartTime && form.formState.dirtyFields.startTime) {
+            const [hours, minutes] = watchedStartTime.split(':').map(Number);
+            const startDate = new Date();
+            startDate.setHours(hours, minutes);
+            const endDate = addMinutes(startDate, 50);
+            form.setValue('endTime', format(endDate, 'HH:mm'), { shouldValidate: true });
+        }
+    }, [watchedStartTime, form]);
+
 
     const onSubmit = async (data: FormValues) => {
         if (!user || !child) {
