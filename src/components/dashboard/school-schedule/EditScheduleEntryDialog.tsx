@@ -88,57 +88,29 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
     });
 
     const watchedSubject = form.watch('subject');
-    
-    // Auto-update end time when start time or subject changes
     const watchedStartTime = form.watch('startTime');
     const watchedConsecutiveClasses = form.watch('consecutiveClasses');
 
     useEffect(() => {
-        if (!isOpen) return; // Only run logic when dialog is open and values are stable
-        
-        let startTimeToUse = watchedStartTime;
-        let subjectToUse = watchedSubject;
+        if (!isOpen) return;
 
-        // If creating new, set smart defaults
-        if (!entryToEdit) {
-            if (subjectToUse === 'Recreio/Intervalo') {
-                const shift = child?.schoolShift;
-                const shiftStart = child?.schoolShiftStart;
-                if ((shift === 'morning' || shift === 'full_time') && shiftStart) {
-                     const [h, m] = shiftStart.split(':').map(Number);
-                     const start = new Date();
-                     start.setHours(h, m);
-                     const recessStart = addMinutes(start, 100); // After 2 classes
-                     startTimeToUse = format(recessStart, 'HH:mm');
-                     form.setValue('startTime', startTimeToUse, { shouldValidate: true });
-                } else {
-                    startTimeToUse = '09:40'; // Fallback
-                    form.setValue('startTime', startTimeToUse, { shouldValidate: true });
-                }
-            }
-        } else {
-            startTimeToUse = entryToEdit.startTime;
-            subjectToUse = entryToEdit.subject;
-        }
+        const isRecess = watchedSubject === 'Recreio/Intervalo';
+        const duration = isRecess ? 20 : 50 * watchedConsecutiveClasses;
 
-        const isRecess = subjectToUse === 'Recreio/Intervalo';
-        const duration = isRecess ? 20 : 50 * (watchedConsecutiveClasses || 1);
-        
         try {
-            const [hours, minutes] = (startTimeToUse || "08:00").split(':').map(Number);
+            const [hours, minutes] = watchedStartTime.split(':').map(Number);
             const startDate = new Date();
             startDate.setHours(hours, minutes);
             const endDate = addMinutes(startDate, duration);
             form.setValue('endTime', format(endDate, 'HH:mm'), { shouldValidate: true });
-        } catch(e) {
+        } catch (e) {
             console.error("Error setting end time", e);
         }
-
-    }, [watchedStartTime, watchedSubject, watchedConsecutiveClasses, form, entryToEdit, child, isOpen]);
+    }, [watchedStartTime, watchedSubject, watchedConsecutiveClasses, form, isOpen]);
 
     useEffect(() => {
         if (isOpen) {
-             if (entryToEdit) {
+            if (entryToEdit) {
                 form.reset({
                     subject: entryToEdit.subject,
                     dayOfWeek: entryToEdit.dayOfWeek,
@@ -174,7 +146,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
         setIsProcessing(true);
         try {
             const isWeekday = ['MO', 'TU', 'WE', 'TH', 'FR'].includes(data.dayOfWeek);
-            const isCreatingNewRecess = data.subject === 'Recreio/Intervalo' && !(entryToEdit && entryToEdit.id);
+            const isCreatingNewRecess = data.subject === 'Recreio/Intervalo' && !entryToEdit;
             
             const payload = { ...data };
 
@@ -190,11 +162,11 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                     familyId: currentContext === 'my-space' ? null : currentContext,
                 };
                 const newEntries = await addRecurringSchoolEntry(baseEntry, daysToRepeat, user);
-                onSave(newEntries); // Pass array of new entries
+                onSave(newEntries);
                 toast({ title: 'Intervalo adicionado!', description: `O intervalo foi adicionado de Segunda a Sexta.` });
             } else if (entryToEdit && entryToEdit.id) {
                 const updatedEntry = await updateSchoolScheduleEntry(entryToEdit.id, payload, user);
-                onSave(updatedEntry); // Pass single updated entry
+                onSave(updatedEntry);
                 toast({ title: 'Aula atualizada!', description: `A aula de ${payload.subject} foi atualizada no horário.` });
             } else {
                  const classCount = payload.consecutiveClasses || 1;
@@ -221,7 +193,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                     };
                     const newEntry = await addSchoolScheduleEntry(newEntryData, user);
                     newEntries.push(newEntry);
-                    currentStartTime = endTime; // Set start time for the next iteration
+                    currentStartTime = endTime;
                  }
 
                 onSave(newEntries); 
@@ -245,6 +217,26 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
         }
         return { minHour: undefined, maxHour: undefined };
     }, [child]);
+
+    useEffect(() => {
+        if (watchedSubject === 'Recreio/Intervalo' && !entryToEdit) {
+            const shift = child?.schoolShift;
+            const shiftStart = child?.schoolShiftStart;
+            if ((shift === 'morning' || shift === 'full_time') && shiftStart) {
+                const [h, m] = shiftStart.split(':').map(Number);
+                const startDate = new Date();
+                startDate.setHours(h, m);
+                const recessStart = addMinutes(startDate, 100);
+                form.setValue('startTime', format(recessStart, 'HH:mm'), { shouldValidate: true });
+            } else if (shift === 'afternoon' && shiftStart) {
+                const [h, m] = shiftStart.split(':').map(Number);
+                const startDate = new Date();
+                startDate.setHours(h, m);
+                const recessStart = addMinutes(startDate, 100);
+                form.setValue('startTime', format(recessStart, 'HH:mm'), { shouldValidate: true });
+            }
+        }
+    }, [watchedSubject, child, form, entryToEdit]);
 
 
     return (
