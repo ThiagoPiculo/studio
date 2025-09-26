@@ -2,6 +2,79 @@
 import type { RewardCategory } from '@/lib/types';
 import { Crown, PartyPopper, ShoppingBag, GraduationCap, HeartHandshake, type LucideIcon, CakeSlice, Utensils, FerrisWheel, Plane } from 'lucide-react';
 
+/*
+LISTA COMPLETA DE CATEGORIAS E RECOMPENSAS
+
+### Categoria: Privilégios
+- Ser o primeiro a experimentar algo novo
+- Direito a contar a primeira história
+- Fotógrafo da Família por um Dia
+- DJ Oficial da Viagem
+- Escolher usar uma roupa especial
+- 30 Minutos Extras de Tela
+- Chef da Noite Auxiliar
+- Escolher o filme da família
+- Dormir 30 Minutos Mais Tarde
+- 1 hora extra de tela
+- Planejar Café da Manhã Especial
+- Café da manhã na cama
+- Vale-Pular-Tarefa
+- Encontro exclusivo 1-para-1
+- Decidir Atividade do Fim de Semana
+- O Dia do Sim (com Regras)
+
+### Categoria: Guloseimas Mágicas (Pequenas Conquistas)
+- Picolé no fim do dia
+- Sorvete de sobremesa
+- Açaí no fim do dia
+
+### Categoria: Refeições de Aventura (Médias Conquistas)
+- Trocar a janta por lanche em casa
+- Lanchar na rua (fast food)
+- Almoçar/Jantar no restaurante
+
+### Categoria: Passeios de Herói (Grandes Conquistas)
+- Banho de mangueira
+- Banho de piscina
+- Churrasco em casa
+- Ir à praia
+
+### Categoria: Jornadas Lendárias (Sonhos)
+- Viagem curta
+
+### Categoria: Experiências
+- Sessão de fotos temáticas
+- Noite de Karaokê em família
+- Acampamento na sala
+- Piquenique temático
+- Levar amigo para passeio
+- Estreia no cinema
+- Peça de teatro infantil
+- Festa do pijama com amigos
+
+### Categoria: Itens Materiais (com Ressalvas)
+- Adesivos decorativos
+- Pacote de figurinhas
+- Massinha de modelar nova cor
+- Gibi ou revista em quadrinhos
+- Partitura nova
+- Livro novo escolhido
+- Kit de arte específico
+
+### Categoria: Desenvolvimento Pessoal
+- Diário ou caderno de desenho
+- App ou jogo educativo premium
+- Kit Faça Você Mesmo (DIY)
+- Dia em parque de aventuras
+- Aula experimental
+
+### Categoria: Impacto e Generosidade
+- Ajudar em abrigo de animais
+- Desenho/cartão para vizinho
+- Doar brinquedo/livro novo
+- Preparar lanches para doar
+*/
+
 export interface PredefinedRewardIdea {
   title: string;
   description?: string;
