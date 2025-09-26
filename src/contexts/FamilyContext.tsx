@@ -34,42 +34,13 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
 
 
-  // Load from session storage on initial mount
-  useEffect(() => {
-    try {
-      const storedContext = sessionStorage.getItem('currentContext');
-      const storedChildId = sessionStorage.getItem('selectedChildId');
-      if (storedContext) {
-        _setCurrentContext(storedContext);
-      }
-      if (storedChildId) {
-        _setSelectedChildId(storedChildId);
-      }
-    } catch (e) {
-      console.error("Could not access session storage:", e);
-    }
-  }, []);
-  
   const setCurrentContext = useCallback((contextId: 'my-space' | string) => {
     _setCurrentContext(contextId);
     _setSelectedChildId(null); // Reset child when context changes
-    if (typeof window !== 'undefined' && window.sessionStorage) {
-        sessionStorage.setItem('currentContext', contextId);
-        sessionStorage.removeItem('selectedChildId'); // Clear child selection
-    }
   }, []);
 
   const setSelectedChildId = useCallback((childId: string | null) => {
     _setSelectedChildId(childId);
-    if (childId) {
-        if (typeof window !== 'undefined' && window.sessionStorage) {
-            sessionStorage.setItem('selectedChildId', childId);
-        }
-    } else {
-        if (typeof window !== 'undefined' && window.sessionStorage) {
-            sessionStorage.removeItem('selectedChildId');
-        }
-    }
   }, []);
   
   // Navigate to destination after a child is selected from the modal
@@ -113,10 +84,10 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
             const allContexts = [...initialContexts, ...familyContexts];
             setAvailableContextsState(allContexts);
 
-            const storedContext = sessionStorage.getItem('currentContext');
-            const isValidStoredContext = allContexts.some(c => c.id === storedContext);
-            
-            _setCurrentContext(storedContext && isValidStoredContext ? storedContext : 'my-space');
+            const isValidCurrentContext = allContexts.some(c => c.id === currentContext);
+            if (!isValidCurrentContext) {
+                 _setCurrentContext('my-space');
+            }
             
             setIsLoading(false);
         };
@@ -163,7 +134,7 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
         unsubscribeMemberships();
         unsubscribeFamilies();
       };
-  }, [user, authLoading]);
+  }, [user, authLoading, currentContext, setCurrentContext]);
 
   // New listener for children in the current context
   useEffect(() => {

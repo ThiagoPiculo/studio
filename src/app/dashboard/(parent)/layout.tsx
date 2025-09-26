@@ -17,7 +17,7 @@ import { AppSidebar } from '@/components/layout/AppSidebar';
 import { Notifications } from '@/components/layout/Notifications';
 import { FamilyContextSwitcher } from '@/components/layout/FamilyContextSwitcher';
 import { Button } from '@/components/ui/button';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { cn } from '@/lib/utils';
 import { BottomNavbar } from '@/components/layout/BottomNavbar';
 import { Sheet } from '@/components/ui/sheet';
@@ -39,14 +39,6 @@ function DashboardMainContent({ children }: { children: React.ReactNode }) {
     const { isLoading: familyLoading } = useFamily();
     const isMobile = useIsMobile();
     
-    useEffect(() => {
-        const postLoginRefresh = sessionStorage.getItem('postLoginRefresh');
-        if (postLoginRefresh === 'true') {
-            sessionStorage.removeItem('postLoginRefresh');
-            window.location.reload();
-        }
-    }, []);
-
     // Show a centralized spinner while the initial auth and family context are loading.
     // This prevents the "flash" of different skeleton screens.
     if (authLoading || familyLoading) {

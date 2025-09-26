@@ -64,15 +64,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (firebaseUser) {
-        const postLoginRefresh = sessionStorage.getItem('postLoginRefresh');
-        if (postLoginRefresh === 'true') {
-            sessionStorage.removeItem('postLoginRefresh');
-            setTimeout(() => {
-                router.replace('/dashboard?initial_load=true');
-            }, 100);
-            return;
-        }
-        
         setLoading(true);
         const userDocRef = doc(db, 'users', firebaseUser.uid);
         const newProfileUnsubscribe = onSnapshot(userDocRef,
@@ -164,8 +155,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         await populateInitialRewardTemplates(googleUser.uid, null);
       }
-      sessionStorage.setItem('postLoginRefresh', 'true');
-
+      
+      router.push('/dashboard');
+      
     } catch (error: any) {
         if (error.code !== 'auth/popup-closed-by-user') {
            console.error("Error during Google sign-in:", error);
@@ -179,9 +171,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       // Clear local state BEFORE signing out to prevent race conditions
       sessionStorage.removeItem('childProfile');
-      sessionStorage.removeItem('currentContext');
-      sessionStorage.removeItem('selectedChildId');
-      sessionStorage.removeItem('postLoginRefresh');
       
       setUser(null);
       setChildProfile(null);
