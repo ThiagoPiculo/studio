@@ -263,7 +263,7 @@ export default function ChildRewardsPage() {
 
       <section>
         <h2 className="text-lg font-semibold mb-3 flex items-center gap-2"><Gift className="h-5 w-5 text-primary"/>Catálogo de Tesouros</h2>
-        <Accordion type="multiple" defaultValue={Object.keys(availableRewardsByCategory)} className="w-full space-y-2">
+        <Accordion type="multiple" className="w-full space-y-2">
              {Object.entries(availableRewardsByCategory).map(([category, group]) => (
                 <AccordionItem key={category} value={category} className="border rounded-lg bg-card text-card-foreground shadow-sm">
                      <AccordionTrigger className="p-3 hover:no-underline text-left">
