@@ -19,6 +19,7 @@ import type { ChildProfile, MissionInstance, RewardTemplate } from '@/lib/types'
 import { useAuth } from '@/contexts/AuthContext';
 import { getChildProfilesForAttribution, getMissionInstancesForContext, getRewardTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { HeroRoster } from '@/components/dashboard/dashboard/HeroRoster';
 
 
 function DesktopDashboardCard({
@@ -216,7 +217,7 @@ function DashboardPage() {
   return (
     <div className="space-y-8">
       {isGuideVisible && (
-        <Accordion type="single" collapsible defaultValue="item-1" className="w-full">
+        <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="item-1" className="border-primary/20 bg-primary/5 rounded-2xl shadow-lg">
                 <AccordionTrigger className="p-4 hover:no-underline text-lg font-semibold">
                     <div className="flex items-center gap-2">
@@ -284,9 +285,11 @@ function DashboardPage() {
             </AccordionItem>
         </Accordion>
       )}
+
+      <HeroRoster />
       
       <div>
-          <h2 className="text-2xl font-headline font-bold mb-4 flex items-center gap-2">Meus Mini Herois</h2>
+          <h2 className="text-2xl font-headline font-bold mb-4 flex items-center gap-2">Acesso Rápido</h2>
           <div className={cn("grid", gridClasses)}>
               <DashboardCard 
                   icon={Calendar1Icon}
