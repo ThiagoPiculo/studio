@@ -131,41 +131,35 @@ body::before {
 }
 
 @media print {
-  @page {
-    size: A4 portrait;
-    margin: 1cm;
-  }
-  body > *:not(.printable-agenda-container) {
-    display: none !important;
+  body {
+    background: none !important;
   }
   .print-hidden {
     display: none !important;
   }
-  body {
-    background-color: #fff !important;
-    background-image: none !important;
+  .print-only {
+    display: block !important;
   }
   .printable-agenda-container {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: repeat(4, auto);
-    grid-auto-flow: column;
-    gap: 20px;
-    -webkit-print-color-adjust: exact;
-    color-adjust: exact;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    width: 100%;
   }
   .day-column {
-    grid-row: span 1;
     page-break-inside: avoid;
-    border: 1px solid #eee;
-    border-radius: 12px;
-    padding: 15px;
+    break-inside: avoid;
   }
-  /* Force page breaks after the 2nd and 4th columns, which correspond to Tuesday and Thursday */
- .day-column:nth-child(2), .day-column:nth-child(4), .day-column:nth-child(6) {
+  .day-column:nth-child(2n) {
     page-break-after: always;
   }
-
+   .day-column:nth-child(7) {
+    grid-column: 1 / 2; /* Domingo na primeira coluna */
+  }
+  .day-column:last-child {
+      page-break-after: auto;
+  }
+  
   .day-header {
     display: flex;
     align-items: center;
@@ -193,4 +187,8 @@ body::before {
   .separator { color: #ccc; }
 }
 
-    
+@layer components {
+  .print-only {
+    display: none;
+  }
+}

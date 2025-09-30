@@ -69,9 +69,9 @@ const capitalize = (s: string) => {
 const getInitials = (name?: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'MH';
 
 const PrintableAgenda = ({ child, missionInstances, currentDate }: { child: ChildProfile | null, missionInstances: MissionInstance[], currentDate: Date }) => {
-    if (!child) return null;
-
+    
     const weeklyEventsForPrint = useMemo(() => {
+        if (!child) return {};
         const startOfCurrentWeek = startOfWeek(currentDate, { weekStartsOn: 1 });
         const endOfCurrentWeek = endOfWeek(currentDate, { weekStartsOn: 1 });
         const daysOfWeek = eachDayOfInterval({ start: startOfCurrentWeek, end: endOfCurrentWeek });
@@ -92,14 +92,16 @@ const PrintableAgenda = ({ child, missionInstances, currentDate }: { child: Chil
                 }
             });
             eventsByDay[dayOfWeekKey].sort((a, b) => {
-                const timeA = getDateObject(a.data.startDate) || new Date(0);
-                const timeB = getDateObject(b.data.startDate) || new Date(0);
+                const timeA = getDateObject(a.data.isRecurring ? a.data.startDate : a.data.dueDate) || new Date(0);
+                const timeB = getDateObject(b.data.isRecurring ? b.data.startDate : b.data.dueDate) || new Date(0);
                 return timeA.getTime() - timeB.getTime();
             });
         });
 
         return eventsByDay;
     }, [currentDate, missionInstances, child]);
+
+    if (!child) return null;
 
     return (
         <div className="printable-agenda-container">
@@ -116,7 +118,7 @@ const PrintableAgenda = ({ child, missionInstances, currentDate }: { child: Chil
                         </div>
                     </div>
                     <div className="missions-list">
-                        {(weeklyEventsForPrint[day] || []).map(event => (
+                        {(weeklyEventsForPrint[day as Weekday] || []).map(event => (
                             <div key={event.data.id} className="mission-card-print">
                                 <div className="mission-icon-print">{event.data.emoji || '🎯'}</div>
                                 <div className="mission-details-print">
@@ -1154,7 +1156,9 @@ function AgendaPageContent() {
   
   return (
     <>
-      <PrintableAgenda child={childForPrint} missionInstances={missionInstances} currentDate={currentDate} />
+      <div className="print-only">
+        <PrintableAgenda child={childForPrint} missionInstances={missionInstances} currentDate={currentDate} />
+      </div>
       <div className="space-y-6 print-hidden">
         <Card>
           <div className="p-4 flex flex-col md:flex-row md:items-center md:flex-wrap gap-4">
@@ -1333,5 +1337,3 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
-
-    
