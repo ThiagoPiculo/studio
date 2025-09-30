@@ -3,7 +3,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import type { ChildProfile } from '@/lib/types';
-import { getChildProfilesByAttribution } from '@/lib/firebase/firestore';
+import { getChildProfilesForAttribution } from '@/lib/firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,7 +31,7 @@ export function HeroRoster() {
             setIsLoading(true);
             try {
                 const childrenPromises = availableContexts.map(context => 
-                    getChildProfilesByAttribution(user.uid, context.id)
+                    getChildProfilesForAttribution(user.uid, context.id)
                 );
                 const childrenByContext = await Promise.all(childrenPromises);
                 const flattenedChildren = childrenByContext.flat().sort((a,b) => a.name.localeCompare(b.name));
