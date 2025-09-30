@@ -42,7 +42,7 @@ const HeroCard = ({ child, onClick }: HeroCardProps) => (
 
 export default function SpaceSelector() {
     const { user, loading: authLoading } = useAuth();
-    const { availableContexts, setCurrentContext, isLoading: familyLoading, setSelectedChildId } = useFamily();
+    const { availableContexts, selectHeroAndNavigate, isLoading: familyLoading } = useFamily();
     const router = useRouter();
 
     const [childrenByContext, setChildrenByContext] = useState<Record<string, ChildProfile[]>>({});
@@ -77,9 +77,7 @@ export default function SpaceSelector() {
 
 
     const handleSelectChild = (contextId: string, childId: string) => {
-        setCurrentContext(contextId);
-        setSelectedChildId(childId);
-        router.push('/dashboard/heroes');
+        selectHeroAndNavigate(childId, contextId, '/dashboard/heroes');
     };
 
     const mySpaceContext = availableContexts.find(c => c.id === 'my-space');
