@@ -378,6 +378,7 @@ export type FamilyContextType = {
   isModalOpen: boolean;
   openModal: (destination?: string) => void;
   closeModal: () => void;
+  selectHeroAndNavigate: (childId: string, contextId: string, path: string) => void;
 };
 
 export type AuthContextType = {

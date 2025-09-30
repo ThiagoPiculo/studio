@@ -42,6 +42,12 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
   const setSelectedChildId = useCallback((childId: string | null) => {
     _setSelectedChildId(childId);
   }, []);
+
+  const selectHeroAndNavigate = useCallback((childId: string, contextId: string, path: string) => {
+    _setSelectedChildId(childId);
+    _setCurrentContext(contextId);
+    router.push(path);
+  }, [router]);
   
   // Navigate to destination after a child is selected from the modal
   useEffect(() => {
@@ -195,6 +201,7 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
     isModalOpen,
     openModal,
     closeModal,
+    selectHeroAndNavigate,
   };
 
   return (

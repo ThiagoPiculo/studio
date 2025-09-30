@@ -19,10 +19,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 
 export function HeroRoster() {
     const { user } = useAuth();
-    const { availableContexts, setSelectedChildId, setCurrentContext } = useFamily();
+    const { availableContexts, selectHeroAndNavigate } = useFamily();
     const [allChildren, setAllChildren] = useState<ChildProfile[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const router = useRouter();
     const isMobile = useIsMobile();
 
     useEffect(() => {
@@ -53,15 +52,8 @@ export function HeroRoster() {
         fetchAllChildren();
     }, [user, availableContexts]);
     
-    const handleHeroClick = (child: ChildProfile) => {
-        const contextId = child.familyId || 'my-space';
-        setCurrentContext(contextId);
-        setSelectedChildId(child.id);
-        router.push('/dashboard/heroes');
-    };
-
     const renderHeroButton = (child: ChildProfile) => (
-        <button key={child.id} onClick={() => handleHeroClick(child)} className="flex flex-col items-center gap-2 text-center group w-20">
+        <button key={child.id} onClick={() => selectHeroAndNavigate(child.id, child.familyId || 'my-space', '/dashboard/heroes')} className="flex flex-col items-center gap-2 text-center group w-20">
             <Avatar className="w-16 h-16 text-2xl border-4 shadow-md transition-transform group-hover:scale-105" style={{ borderColor: child.color }}>
                 <AvatarImage src={child.avatar} alt={child.name} />
                 <AvatarFallback className="font-bold" style={{ backgroundColor: child.color }}>
