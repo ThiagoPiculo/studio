@@ -6,14 +6,16 @@ import { useFamily } from '@/contexts/FamilyContext';
 import type { ChildProfile } from '@/lib/types';
 import { getChildProfilesForAttribution } from '@/lib/firebase/firestore';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Loader2 } from 'lucide-react';
+import { PlusCircle, Loader2, ChevronDown } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import Link from 'next/link';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 export function HeroRoster() {
     const { user } = useAuth();
@@ -21,6 +23,7 @@ export function HeroRoster() {
     const [allChildren, setAllChildren] = useState<ChildProfile[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
+    const isMobile = useIsMobile();
 
     useEffect(() => {
         if (!user || availableContexts.length === 0) {
@@ -56,7 +59,7 @@ export function HeroRoster() {
         setSelectedChildId(child.id);
         router.push('/dashboard/heroes');
     };
-    
+
     const renderHeroButton = (child: ChildProfile) => (
         <button key={child.id} onClick={() => handleHeroClick(child)} className="flex flex-col items-center gap-2 text-center group w-20">
             <Avatar className="w-16 h-16 text-2xl border-4 shadow-md transition-transform group-hover:scale-105" style={{ borderColor: child.color }}>
@@ -69,6 +72,49 @@ export function HeroRoster() {
         </button>
     );
 
+    const renderMobileView = () => {
+        const visibleHeroes = allChildren.slice(0, 4);
+        const hiddenHeroes = allChildren.slice(4);
+
+        return (
+            <Accordion type="single" collapsible className="w-full" disabled={hiddenHeroes.length === 0}>
+                <AccordionItem value="item-1" className="border-none">
+                    <CardContent className="p-4">
+                        <div className="grid grid-cols-4 gap-3">
+                            {visibleHeroes.map(renderHeroButton)}
+                        </div>
+                    </CardContent>
+                    {hiddenHeroes.length > 0 && (
+                        <AccordionContent className="p-4 pt-0">
+                            <div className="grid grid-cols-4 gap-3 pt-4 border-t">
+                                {hiddenHeroes.map(renderHeroButton)}
+                            </div>
+                        </AccordionContent>
+                    )}
+                    {hiddenHeroes.length > 0 && (
+                        <CardFooter className="p-2">
+                             <AccordionTrigger className="w-full text-sm text-muted-foreground hover:text-primary">
+                                Ver todos os {allChildren.length} heróis
+                             </AccordionTrigger>
+                        </CardFooter>
+                    )}
+                </AccordionItem>
+            </Accordion>
+        );
+    };
+
+    const renderDesktopView = () => (
+         <CardContent>
+            <ScrollArea>
+                <div className="flex space-x-6 pb-4">
+                    {allChildren.map(renderHeroButton)}
+                </div>
+                <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+        </CardContent>
+    );
+
+
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -79,24 +125,19 @@ export function HeroRoster() {
                     </Link>
                 </Button>
             </CardHeader>
-            <CardContent>
-                {isLoading ? (
-                    <div className="flex items-center justify-center h-24">
-                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    </div>
-                ) : allChildren.length === 0 ? (
-                     <div className="text-center py-4 text-muted-foreground">
+            {isLoading ? (
+                <div className="flex items-center justify-center h-24">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+            ) : allChildren.length === 0 ? (
+                 <CardContent>
+                    <div className="text-center py-4 text-muted-foreground">
                         <p>Nenhum herói cadastrado ainda.</p>
-                     </div>
-                ) : (
-                    <ScrollArea>
-                        <div className="flex space-x-6 pb-4">
-                            {allChildren.map(renderHeroButton)}
-                        </div>
-                        <ScrollBar orientation="horizontal" />
-                    </ScrollArea>
-                )}
-            </CardContent>
+                    </div>
+                </CardContent>
+            ) : (
+                isMobile ? renderMobileView() : renderDesktopView()
+            )}
         </Card>
     );
 }
