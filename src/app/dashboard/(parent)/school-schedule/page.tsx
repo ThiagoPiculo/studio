@@ -93,7 +93,6 @@ function SchoolSchedulePageContent() {
     }, [childrenInContext, scheduleEntries]);
     
     const hasAnySchedule = scheduleEntries.length > 0;
-    const hasAnyRecess = scheduleEntries.some(e => e.subject === 'Recreio/Intervalo');
     
     const handleEditEntry = (entry: SchoolScheduleEntry) => {
         setEntryToEdit(entry);
@@ -132,7 +131,7 @@ function SchoolSchedulePageContent() {
     }, [childrenInContext, selectedChildId]);
 
 
-    if (authLoading || isFamilyLoading) {
+    if (authLoading || isFamilyLoading || isLoadingSchedule) {
         return <Loading />;
     }
 
@@ -148,7 +147,7 @@ function SchoolSchedulePageContent() {
 
     return (
         <div className="space-y-6">
-            {!hasAnySchedule && (
+            {!isLoadingSchedule && !hasAnySchedule && (
                  <Alert variant="default" className="border-primary/20 bg-primary/5">
                     <Info className="mr-2 h-4 w-4 text-primary" />
                     <AlertTitle className="font-semibold text-primary">Comece pela Agenda Escolar!</AlertTitle>
@@ -246,7 +245,7 @@ function SchoolSchedulePageContent() {
               onSave={fetchData}
               entryToEdit={entryToEdit}
               child={entryToEdit ? childrenInContext.find(c => c.id === entryToEdit.childId) || null : selectedChildForNewEntry}
-              showRecessHint={!hasAnyRecess}
+              showRecessHint={!hasAnySchedule}
               onDelete={() => {
                 if(entryToEdit) setEntryToDelete(entryToEdit);
                 setIsEntryDialogOpen(false);
