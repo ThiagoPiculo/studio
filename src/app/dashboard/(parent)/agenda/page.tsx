@@ -105,7 +105,7 @@ const PrintableAgenda = ({ child, missionInstances, currentDate }: { child: Chil
 
     return (
         <div className="printable-agenda-container">
-            {allWeekdays.map((day, index) => (
+            {allWeekdays.map((day) => (
                 <div key={day} className="day-column">
                     <div className="day-header">
                         <span className="day-title">{weekdayLabels[day].long}</span>
@@ -146,13 +146,6 @@ function AgendaPageContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const isMobile = useIsMobile();
-  
-  const canEdit = useMemo(() => {
-    if (currentContext === 'my-space') return true;
-    if (!currentRole) return false;
-    const editableRoles: FamilyRole[] = ['Owner', 'Co-Owner', 'Guardian'];
-    return editableRoles.includes(currentRole as FamilyRole);
-  }, [currentContext, currentRole]);
   
   const [currentDate, setCurrentDate] = useState(() => {
     const focusDateParam = searchParams.get('focus_date');
@@ -201,9 +194,17 @@ function AgendaPageContent() {
 
   const [confirmingMission, setConfirmingMission] = useState<{ instance: MissionInstance; date: Date } | null>(null);
 
+  const canEdit = useMemo(() => {
+    if (currentContext === 'my-space') return true;
+    if (!currentRole) return false;
+    const editableRoles: FamilyRole[] = ['Owner', 'Co-Owner', 'Guardian'];
+    return editableRoles.includes(currentRole as FamilyRole);
+  }, [currentContext, currentRole]);
+
   const childrenMap = useMemo(() => new Map(children.map(child => [child.id, child])), [children]);
 
   const childForPrint = selectedChildId ? childrenMap.get(selectedChildId) : (children.length > 0 ? children[0] : null);
+
 
   const handleSelectedChildChange = (id: string | null) => {
     setSelectedChildId(id);
@@ -1156,10 +1157,10 @@ function AgendaPageContent() {
   
   return (
     <>
-      <div className="print-only">
+      <div className="hidden print:block">
         <PrintableAgenda child={childForPrint} missionInstances={missionInstances} currentDate={currentDate} />
       </div>
-      <div className="space-y-6 print-hidden">
+      <div className="space-y-6 print:hidden">
         <Card>
           <div className="p-4 flex flex-col md:flex-row md:items-center md:flex-wrap gap-4">
             <div className="flex items-center gap-2 flex-grow">

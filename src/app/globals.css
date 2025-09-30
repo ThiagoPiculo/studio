@@ -131,64 +131,85 @@ body::before {
 }
 
 @media print {
-  body {
-    background: none !important;
-  }
-  .print-hidden {
-    display: none !important;
-  }
-  .print-only {
-    display: block !important;
-  }
-  .printable-agenda-container {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-    width: 100%;
-  }
-  .day-column {
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
-  .day-column:nth-child(2n) {
-    page-break-after: always;
-  }
-   .day-column:nth-child(7) {
-    grid-column: 1 / 2; /* Domingo na primeira coluna */
-  }
-  .day-column:last-child {
-      page-break-after: auto;
-  }
-  
-  .day-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 2px solid #ddd;
-    padding-bottom: 10px;
-    margin-bottom: 15px;
-  }
-  .day-title { font-size: 1.5rem; font-weight: bold; color: #6d28d9; }
-  .hero-info { display: flex; align-items: center; gap: 8px; }
-  .hero-avatar { width: 32px !important; height: 32px !important; border-radius: 50%; }
-  .hero-name { font-size: 0.9rem; font-weight: 500; }
+    body {
+        background: none !important;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+    }
+    
+    .printable-agenda-container {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        width: 100%;
+    }
 
-  .mission-card-print { 
-    display: flex; align-items: center; gap: 15px; padding: 12px; 
-    border-radius: 8px; background-color: #f3f4f6 !important; margin-bottom: 10px; 
-    -webkit-print-color-adjust: exact;
-    color-adjust: exact;
-  }
-  .mission-icon-print { font-size: 2.5rem; }
-  .mission-details-print { flex-grow: 1; }
-  .mission-meta-line-print { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: #6b7280; font-weight: bold; }
-  .mission-meta-line-print .reward-print { color: #ca8a04; }
-  .mission-title-print { font-size: 1.2rem; font-weight: bold; margin-top: 4px; }
-  .separator { color: #ccc; }
+    .day-column {
+        page-break-inside: avoid;
+        break-inside: avoid;
+        padding-top: 1rem;
+    }
+    
+    /* Logic to break pages */
+    .day-column:nth-child(2),
+    .day-column:nth-child(4),
+    .day-column:nth-child(6) {
+        page-break-after: always;
+    }
+
+    .day-column:nth-child(7) {
+        grid-column: 1 / 2; /* Domingo on the left column of a new page */
+    }
+
+    .day-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 2px solid #ddd;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    }
+    .day-title { font-size: 1.25rem; font-weight: bold; color: hsl(var(--primary)); }
+    .hero-info { display: flex; align-items: center; gap: 8px; }
+    .hero-avatar { width: 32px !important; height: 32px !important; border-radius: 50%; }
+    .hero-name { font-size: 0.9rem; font-weight: 500; }
+
+    .mission-card-print { 
+        display: flex; 
+        align-items: center; 
+        gap: 15px; 
+        padding: 12px; 
+        border-radius: 8px; 
+        background-color: #f9fafb !important;
+        margin-bottom: 10px; 
+    }
+    .mission-icon-print { font-size: 2.25rem; }
+    .mission-details-print { flex-grow: 1; }
+    .mission-meta-line-print { 
+        display: flex; 
+        align-items: center; 
+        gap: 8px; 
+        font-size: 0.9rem; 
+        color: #6b7280; 
+        font-weight: bold;
+    }
+    .mission-meta-line-print .reward-print { color: #f59e0b; }
+    .mission-title-print { font-size: 1.1rem; font-weight: bold; margin-top: 2px; }
+    .separator { color: #d1d5db; }
 }
 
 @layer components {
-  .print-only {
-    display: none;
-  }
+    .print-only {
+        display: none;
+    }
+    @media print {
+        .print-hidden {
+            display: none !important;
+        }
+        .print-only {
+            display: block !important;
+        }
+    }
 }
+
+    
