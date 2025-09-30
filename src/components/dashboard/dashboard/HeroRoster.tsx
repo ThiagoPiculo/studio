@@ -18,7 +18,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 
 const MAX_HEROES_VISIBLE_MOBILE = 4;
-const MAX_HEROES_VISIBLE_DESKTOP_GRID = 8; // Threshold to switch to accordion on desktop
+const MAX_HEROES_VISIBLE_DESKTOP = 8; 
 
 export function HeroRoster() {
     const { user } = useAuth();
@@ -75,9 +75,10 @@ export function HeroRoster() {
         </button>
     );
 
-    const shouldShowAccordion = isMobile || allChildren.length > MAX_HEROES_VISIBLE_DESKTOP_GRID;
-    const visibleHeroes = shouldShowAccordion ? allChildren.slice(0, MAX_HEROES_VISIBLE_MOBILE) : allChildren;
-    const hiddenHeroes = shouldShowAccordion ? allChildren.slice(MAX_HEROES_VISIBLE_MOBILE) : [];
+    const maxVisibleHeroes = isMobile ? MAX_HEROES_VISIBLE_MOBILE : MAX_HEROES_VISIBLE_DESKTOP;
+    const shouldShowAccordion = allChildren.length > maxVisibleHeroes;
+    const visibleHeroes = shouldShowAccordion ? allChildren.slice(0, maxVisibleHeroes) : allChildren;
+    const hiddenHeroes = shouldShowAccordion ? allChildren.slice(maxVisibleHeroes) : [];
 
     return (
         <Card>
