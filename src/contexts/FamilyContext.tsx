@@ -51,13 +51,8 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
     router.push(path);
   }, [router, currentContext]);
   
-  // Navigate to destination after a child is selected from the modal
-  useEffect(() => {
-    if (selectedChildId && modalDestination) {
-      router.push(modalDestination);
-      setModalDestination(null); // Reset destination
-    }
-  }, [selectedChildId, modalDestination, router]);
+  // This useEffect was causing a race condition and has been removed.
+  // The selectHeroAndNavigate function now handles navigation directly.
   
   const openModal = useCallback((destination?: string) => {
     setModalDestination(destination || null);
@@ -66,7 +61,8 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
 
   const closeModal = useCallback(() => {
     setIsModalOpen(false);
-    // Do not clear modalDestination here, it might be needed for navigation
+    // When the modal closes without selection, clear the destination
+    setModalDestination(null);
   }, []);
 
 
