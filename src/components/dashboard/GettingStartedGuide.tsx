@@ -6,12 +6,10 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { UserPlus, Target, Gift, CheckCircle, Circle, ArrowRight } from 'lucide-react';
+import { UserPlus, Target, Gift, CheckCircle, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/AuthContext';
-import { useFamily } from '@/contexts/FamilyContext';
 
 interface GettingStartedGuideProps {
   hasChildren: boolean;
@@ -49,33 +47,32 @@ function Step({ isComplete, title, href, icon: Icon }: StepProps) {
 
 
 export function GettingStartedGuide({ hasChildren, hasMissions, hasRewards }: GettingStartedGuideProps) {
-  const { user } = useAuth();
-  const { availableContexts } = useFamily();
   const [isVisible, setIsVisible] = useState(false);
   
-  const hasAlliances = availableContexts.length > 1;
+  // This state will now reflect if the guide should be shown, not if it's dismissed.
+  const [showInDashboard, setShowInDashboard] = useState(true);
 
   useEffect(() => {
     // Only run on client
     const dismissed = localStorage.getItem('gettingStartedDismissed');
-    if (dismissed !== 'true') {
-        setIsVisible(true);
-    }
+    const shouldShow = dismissed !== 'true';
+    setIsVisible(shouldShow);
+    setShowInDashboard(shouldShow);
   }, []);
 
-  const handleDismiss = (dismissed: boolean) => {
-    if (dismissed) {
+  const handleVisibilityChange = (shouldBeVisible: boolean) => {
+    if (shouldBeVisible) {
+      localStorage.removeItem('gettingStartedDismissed');
+      setIsVisible(true);
+    } else {
       localStorage.setItem('gettingStartedDismissed', 'true');
       setIsVisible(false);
-    } else {
-      localStorage.removeItem('gettingStartedDismissed');
-      // Note: This won't make it reappear instantly unless state is also set.
-      // But the main goal is to dismiss it.
     }
+    setShowInDashboard(shouldBeVisible);
   };
 
   const steps = [
-    { name: 'children', complete: hasChildren, title: 'Cadastre seu primeiro Herói', href: '/dashboard/novo-heroi', icon: UserPlus },
+    { name: 'children', complete: hasChildren, title: 'Cadastre seu primeiro Herói', href: '/dashboard/assistente', icon: UserPlus },
     { name: 'missions', complete: hasMissions, title: 'Crie sua primeira Missão', href: '/dashboard/missions/new', icon: Target },
     { name: 'rewards', complete: hasRewards, title: 'Crie sua primeira Recompensa', href: '/dashboard/rewards/new', icon: Gift },
   ];
@@ -83,7 +80,6 @@ export function GettingStartedGuide({ hasChildren, hasMissions, hasRewards }: Ge
   const completedSteps = steps.filter(step => step.complete).length;
   const progress = (completedSteps / steps.length) * 100;
   
-  // This guide should only show for users who truly have nothing set up.
   const isNewUser = !hasChildren && !hasMissions && !hasRewards;
 
   if (!isNewUser || !isVisible) {
@@ -117,9 +113,13 @@ export function GettingStartedGuide({ hasChildren, hasMissions, hasRewards }: Ge
           ))}
         </div>
          <div className="flex items-center space-x-2 pt-2">
-            <Checkbox id="dismiss-guide" onCheckedChange={handleDismiss} />
-            <Label htmlFor="dismiss-guide" className="text-sm font-normal text-muted-foreground">
-                Não exibir mais esta seção.
+            <Switch
+              id="show-guide-switch"
+              checked={showInDashboard}
+              onCheckedChange={handleVisibilityChange}
+            />
+            <Label htmlFor="show-guide-switch" className="text-sm font-normal text-muted-foreground">
+                Exibir este guia no início.
             </Label>
         </div>
       </CardContent>

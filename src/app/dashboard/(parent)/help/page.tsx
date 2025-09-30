@@ -3,13 +3,16 @@
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Input } from '@/components/ui/input';
-import { HelpCircle, Search, PackageSearch, Wand2, ChevronsRight, PlusCircle, Link as LinkIcon, Users } from 'lucide-react';
+import { HelpCircle, Search, PackageSearch, Wand2, Home, Link as LinkIcon } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 
 const helpContent = [
   {
@@ -75,7 +78,23 @@ const helpContent = [
 export default function HelpCenterPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [openItems, setOpenItems] = useState<string[]>(['comece-aqui']);
+  const [showGuideInDashboard, setShowGuideInDashboard] = useState(true);
 
+  useEffect(() => {
+    // Sincroniza o estado do Switch com o localStorage na montagem do componente.
+    const isDismissed = localStorage.getItem('gettingStartedCardDismissed') === 'true';
+    setShowGuideInDashboard(!isDismissed);
+  }, []);
+
+  const handleGuideVisibilityChange = (shouldShow: boolean) => {
+    if (shouldShow) {
+      localStorage.removeItem('gettingStartedCardDismissed');
+    } else {
+      localStorage.setItem('gettingStartedCardDismissed', 'true');
+    }
+    setShowGuideInDashboard(shouldShow);
+  };
+  
   useEffect(() => {
     const baseOpenItems = ['comece-aqui'];
     if (searchTerm.trim() !== '') {
@@ -142,38 +161,43 @@ export default function HelpCenterPage() {
                           <CardTitle className="text-base flex items-center gap-2">Criar Rotina para Criança</CardTitle>
                            <CardDescription>Deixe a assitente <strong>Aura</strong> te guiar! Crie o perfil e a rotina de missões diárias de forma rápida e inteligente</CardDescription>
                       </CardHeader>
-                      <CardContent>
+                      <CardFooter>
                           <Button asChild className="w-full">
                               <Link href="/dashboard/assistente">
                                    Usar o Assistente de Criação
                               </Link>
                           </Button>
-                      </CardContent>
+                      </CardFooter>
                   </Card>
                   <Card className="bg-background/70">
                       <CardHeader>
                           <CardTitle className="text-base flex items-center gap-2">Colaborar em Aliança</CardTitle>
+                          <CardDescription>Crie uma aliança para colaborar ou junte-se a uma existente com um código de convite.</CardDescription>
                       </CardHeader>
-                      <CardContent className="space-y-2">
+                      <CardFooter className="grid grid-cols-2 gap-2">
                           <Button asChild variant="secondary" className="w-full">
                               <Link href="/dashboard/family?action=join">
-                                   Entrar em aliança com convite
+                                   Entrar
                               </Link>
                           </Button>
-                          <div className="grid grid-cols-2 gap-2">
-                            <Button asChild variant="secondary" className="w-full">
-                                <Link href="/dashboard/family?action=create">
-                                    Criar Aliança
-                                </Link>
-                            </Button>
-                             <Button asChild variant="secondary" className="w-full">
-                                <Link href="/dashboard/alliances">
-                                    Gerenciar Alianças
-                                </Link>
-                            </Button>
-                          </div>
-                      </CardContent>
+                           <Button asChild variant="secondary" className="w-full">
+                              <Link href="/dashboard/family?action=create">
+                                  Criar
+                              </Link>
+                          </Button>
+                      </CardFooter>
                   </Card>
+                </div>
+                 <Separator className="my-4" />
+                <div className="flex items-center space-x-2">
+                    <Switch
+                        id="show-guide-switch"
+                        checked={showGuideInDashboard}
+                        onCheckedChange={handleGuideVisibilityChange}
+                    />
+                    <Label htmlFor="show-guide-switch" className="text-sm font-normal text-muted-foreground flex items-center gap-1.5">
+                        Exibir Card "Comece por Aqui!" no <Home className="h-4 w-4" /> Início
+                    </Label>
                 </div>
             </AccordionContent>
         </AccordionItem>
