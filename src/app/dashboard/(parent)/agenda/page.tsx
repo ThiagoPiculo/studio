@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isToday, addDays, subDays, eachDayOfInterval, startOfDay, isSameDay, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckSquare, Square, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2, Target, Filter, ArrowLeft, NotebookPen, Edit3, Repeat, FileText, CalendarDays, HelpCircle, ExternalLink, View, Sparkles, MoreVertical, Circle, CheckCircle, Heart } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckSquare, Square, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2, Target, Filter, ArrowLeft, NotebookPen, Edit3, Repeat, FileText, CalendarDays, HelpCircle, ExternalLink, View, Sparkles, MoreVertical, Circle, CheckCircle, Heart, Printer } from 'lucide-react';
 import { onSnapshot, query, collection, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 
@@ -13,8 +13,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { getChildProfilesForAttribution, getMissionInstancesForContext, getMissionTemplateById, completeMissionInstance, reactivateMissionInstance, excludeMissionInstanceOccurrence, updateRecurringMissionInstance, deleteMissionInstance, deleteFutureOccurrences } from '@/lib/firebase/firestore';
 import { isMissionScheduledForDate, isMissionCompletedForDate, formatRecurrenceSummary, getDateObject, convertTimestampsInObject } from '@/lib/calendar-utils';
-import type { ChildProfile, MissionInstance, MissionTemplate, MissionCategoryDetails, FamilyRole } from '@/lib/types';
-import { missionCategories, weekdays, familyRoles } from '@/lib/types';
+import type { ChildProfile, MissionInstance, MissionTemplate, MissionCategoryDetails, FamilyRole, Weekday } from '@/lib/types';
+import { missionCategories, weekdays, familyRoles, allWeekdays, weekdayLabels } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -65,6 +65,44 @@ const capitalize = (s: string) => {
     }
     return s.charAt(0).toUpperCase() + s.slice(1);
 }
+
+const PrintableAgenda = ({ child, eventsByDay }: { child: ChildProfile | null, eventsByDay: Record<Weekday, CalendarEvent[]> }) => {
+    if (!child) return null;
+
+    return (
+        <div className="printable-agenda-container hidden print:block">
+            {allWeekdays.map((day, index) => (
+                <div key={day} className="day-column">
+                    <div className="day-header">
+                        <span className="day-title">{weekdayLabels[day].long}</span>
+                        <div className="hero-info">
+                            <Avatar className="hero-avatar">
+                                <AvatarImage src={child.avatar} alt={child.name} />
+                                <AvatarFallback style={{backgroundColor: child.color}}>{getInitials(child.name)}</AvatarFallback>
+                            </Avatar>
+                            <span className="hero-name">{child.name}</span>
+                        </div>
+                    </div>
+                    <div className="missions-list">
+                        {(eventsByDay[day] || []).map(event => (
+                            <div key={event.data.id} className="mission-card-print">
+                                <div className="mission-icon-print">{event.data.emoji || '🎯'}</div>
+                                <div className="mission-details-print">
+                                    <div className="mission-meta-line-print">
+                                        <span>{format(getDateObject(event.data.isRecurring ? event.data.startDate : event.data.dueDate)!, 'HH:mm')}</span>
+                                        <span className="separator">|</span>
+                                        <span className="reward-print">+{event.data.starsReward} ⭐</span>
+                                    </div>
+                                    <div className="mission-title-print">{event.title}</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+};
 
 function AgendaPageContent() {
   const { user } = useAuth();
@@ -1065,11 +1103,47 @@ function AgendaPageContent() {
   const availableDateRangeOptions = isKidsView
     ? dateRangeOptions.filter(opt => opt.value === 'day' || opt.value === '3days')
     : dateRangeOptions;
+  
+  const childForPrint = selectedChildId ? childrenMap.get(selectedChildId) : (children.length > 0 ? children[0] : null);
+
+  const weeklyEventsForPrint = useMemo(() => {
+    const startOfCurrentWeek = startOfWeek(currentDate, { weekStartsOn: 1 });
+    const endOfCurrentWeek = endOfWeek(currentDate, { weekStartsOn: 1 });
+    const daysOfWeek = eachDayOfInterval({ start: startOfCurrentWeek, end: endOfCurrentWeek });
+    const eventsByDay: Record<Weekday, CalendarEvent[]> = { MO: [], TU: [], WE: [], TH: [], FR: [], SA: [], SU: [] };
+
+    if (!childForPrint) return eventsByDay;
+
+    const childMissions = missionInstances.filter(inst => inst.childId === childForPrint.id);
+
+    daysOfWeek.forEach(day => {
+        const dayOfWeekKey = allWeekdays[day.getDay() === 0 ? 6 : day.getDay() - 1];
+        childMissions.forEach(mission => {
+            if (isMissionScheduledForDate(mission, day)) {
+                eventsByDay[dayOfWeekKey].push({
+                    date: day,
+                    title: mission.title,
+                    type: 'mission',
+                    data: mission,
+                });
+            }
+        });
+        // Sort events within each day by time
+        eventsByDay[dayOfWeekKey].sort((a, b) => {
+            const timeA = getDateObject(a.data.startDate) || new Date(0);
+            const timeB = getDateObject(b.data.startDate) || new Date(0);
+            return timeA.getTime() - timeB.getTime();
+        });
+    });
+
+    return eventsByDay;
+  }, [currentDate, missionInstances, childForPrint]);
 
 
   return (
     <>
-      <div className="space-y-6">
+      <PrintableAgenda child={childForPrint} eventsByDay={weeklyEventsForPrint} />
+      <div className="space-y-6 print:hidden">
         <Card>
           <div className="p-4 flex flex-col md:flex-row md:items-center md:flex-wrap gap-4">
             <div className="flex items-center gap-2 flex-grow">
@@ -1131,6 +1205,7 @@ function AgendaPageContent() {
                    <Switch id="kids-view-switch" checked={isKidsView} onCheckedChange={setIsKidsView}/>
                    <Label htmlFor="kids-view-switch" className="text-sm whitespace-nowrap flex items-center gap-1.5">Visão da Criança</Label>
                  </div>
+                 <Button onClick={() => window.print()} variant="outline"><Printer className="mr-2 h-4 w-4"/> Imprimir</Button>
                  {canEdit && (
                     <Button asChild className="flex-grow-0 sm:flex-grow-0">
                       <Link href={`/dashboard/missions/new?childId=${selectedChildId || ''}`}>

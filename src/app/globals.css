@@ -129,3 +129,59 @@ body::before {
   z-index: -1;
   pointer-events: none;
 }
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 1cm;
+  }
+  body > *:not(.printable-agenda-container) {
+    display: none !important;
+  }
+  body {
+    background-color: #fff !important;
+  }
+  .printable-agenda-container {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .day-column {
+    page-break-inside: avoid;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 15px;
+  }
+  .day-column:nth-child(2n) {
+     page-break-after: always;
+  }
+   .day-column:last-child {
+    page-break-after: auto;
+  }
+  .day-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+  }
+  .day-title { font-size: 1.5rem; font-weight: bold; color: #6d28d9; }
+  .hero-info { display: flex; align-items: center; gap: 8px; }
+  .hero-avatar { width: 32px !important; height: 32px !important; border-radius: 50%; }
+  .hero-name { font-size: 0.9rem; font-weight: 500; }
+
+  .mission-card-print { 
+    display: flex; align-items: center; gap: 15px; padding: 12px; 
+    border-radius: 8px; background-color: #f3f4f6 !important; margin-bottom: 10px; 
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  .mission-icon-print { font-size: 2.5rem; }
+  .mission-details-print { flex-grow: 1; }
+  .mission-meta-line-print { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: #6b7280; font-weight: bold; }
+  .mission-meta-line-print .reward-print { color: #ca8a04; }
+  .mission-title-print { font-size: 1.2rem; font-weight: bold; margin-top: 4px; }
+  .separator { color: #ccc; }
+}
+
