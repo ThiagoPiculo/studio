@@ -69,74 +69,78 @@ const capitalize = (s: string) => {
 const getInitials = (name?: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'MH';
 
 const PrintableAgenda = ({ child, missionInstances, currentDate }: { child: ChildProfile | null, missionInstances: MissionInstance[], currentDate: Date }) => {
-    
-    const weeklyEventsForPrint = useMemo(() => {
-        if (!child) return {};
-        const startOfCurrentWeek = startOfWeek(currentDate, { weekStartsOn: 1 });
-        const endOfCurrentWeek = endOfWeek(currentDate, { weekStartsOn: 1 });
-        const daysOfWeek = eachDayOfInterval({ start: startOfCurrentWeek, end: endOfCurrentWeek });
-        const eventsByDay: Record<Weekday, CalendarEvent[]> = { MO: [], TU: [], WE: [], TH: [], FR: [], SA: [], SU: [] };
-        
-        const childMissions = missionInstances.filter(inst => inst.childId === child.id);
+  const weeklyEventsForPrint = useMemo(() => {
+    if (!child) return {};
+    const startOfCurrentWeek = startOfWeek(currentDate, { weekStartsOn: 1 });
+    const endOfCurrentWeek = endOfWeek(currentDate, { weekStartsOn: 1 });
+    const daysOfWeek = eachDayOfInterval({ start: startOfCurrentWeek, end: endOfCurrentWeek });
+    const eventsByDay: Record<string, CalendarEvent[]> = { MO: [], TU: [], WE: [], TH: [], FR: [], SA: [], SU: [] };
 
-        daysOfWeek.forEach(day => {
-            const dayOfWeekKey = allWeekdays[day.getDay() === 0 ? 6 : day.getDay() - 1];
-            childMissions.forEach(mission => {
-                if (isMissionScheduledForDate(mission, day)) {
-                    eventsByDay[dayOfWeekKey].push({
-                        date: day,
-                        title: mission.title,
-                        type: 'mission',
-                        data: mission,
-                    });
-                }
-            });
-            eventsByDay[dayOfWeekKey].sort((a, b) => {
-                const timeA = getDateObject(a.data.isRecurring ? a.data.startDate : a.data.dueDate) || new Date(0);
-                const timeB = getDateObject(b.data.isRecurring ? b.data.startDate : b.data.dueDate) || new Date(0);
-                return timeA.getTime() - timeB.getTime();
-            });
-        });
+    const childMissions = missionInstances.filter(inst => inst.childId === child.id);
 
-        return eventsByDay;
-    }, [currentDate, missionInstances, child]);
+    daysOfWeek.forEach(day => {
+      const dayOfWeekKey = allWeekdays[day.getDay() === 0 ? 6 : day.getDay() - 1];
+      childMissions.forEach(mission => {
+        if (isMissionScheduledForDate(mission, day)) {
+          eventsByDay[dayOfWeekKey].push({
+            date: day,
+            title: mission.title,
+            type: 'mission',
+            data: mission,
+          });
+        }
+      });
+      (eventsByDay[dayOfWeekKey] as any[]).sort((a, b) => {
+        const timeA = getDateObject(a.data.isRecurring ? a.data.startDate : a.data.dueDate) || new Date(0);
+        const timeB = getDateObject(b.data.isRecurring ? b.data.startDate : b.data.dueDate) || new Date(0);
+        return timeA.getTime() - timeB.getTime();
+      });
+    });
 
-    if (!child) return null;
+    return eventsByDay;
+  }, [currentDate, missionInstances, child]);
 
-    return (
-        <div className="printable-agenda-container">
-            {allWeekdays.map((day) => (
-                <div key={day} className="day-column">
-                    <div className="day-header">
-                        <span className="day-title">{weekdayLabels[day].long}</span>
-                        <div className="hero-info">
-                            <Avatar className="hero-avatar">
-                                <AvatarImage src={child.avatar} alt={child.name} />
-                                <AvatarFallback style={{backgroundColor: child.color}}>{getInitials(child.name)}</AvatarFallback>
-                            </Avatar>
-                            <span className="hero-name">{child.name}</span>
-                        </div>
+  if (!child) return null;
+
+  return (
+    <div className="printable-agenda-container">
+      {allWeekdays.map((day, index) => {
+        const isPairStart = index % 2 === 0;
+        const dayEvents = weeklyEventsForPrint[day as Weekday] || [];
+        return (
+          <div key={day} className={`day-column ${isPairStart ? 'pair-start' : ''}`}>
+            <div className="day-header">
+              <span className="day-title">{weekdayLabels[day].long}</span>
+              <div className="hero-info">
+                <Avatar className="hero-avatar">
+                  <AvatarImage src={child.avatar} alt={child.name} />
+                  <AvatarFallback style={{ backgroundColor: child.color }}>{getInitials(child.name)}</AvatarFallback>
+                </Avatar>
+                <span className="hero-name">{child.name}</span>
+              </div>
+            </div>
+            <div className="missions-list">
+              {dayEvents.map(event => (
+                <div key={event.data.id} className="mission-card-print">
+                  <div className="mission-icon-print">{event.data.emoji || '🎯'}</div>
+                  <div className="mission-details-print">
+                    <div className="mission-meta-line-print">
+                      <span>{format(getDateObject(event.data.isRecurring ? event.data.startDate : event.data.dueDate)!, 'HH:mm')}</span>
+                      <span className="separator">|</span>
+                      <span className="reward-print">+{event.data.starsReward} ⭐</span>
                     </div>
-                    <div className="missions-list">
-                        {(weeklyEventsForPrint[day as Weekday] || []).map(event => (
-                            <div key={event.data.id} className="mission-card-print">
-                                <div className="mission-icon-print">{event.data.emoji || '🎯'}</div>
-                                <div className="mission-details-print">
-                                    <div className="mission-meta-line-print">
-                                        <span>{format(getDateObject(event.data.isRecurring ? event.data.startDate : event.data.dueDate)!, 'HH:mm')}</span>
-                                        <span className="separator">|</span>
-                                        <span className="reward-print">+{event.data.starsReward} ⭐</span>
-                                    </div>
-                                    <div className="mission-title-print">{event.title}</div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                    <div className="mission-title-print">{event.title}</div>
+                  </div>
                 </div>
-            ))}
-        </div>
-    );
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 };
+
 
 function AgendaPageContent() {
   const { user } = useAuth();
@@ -598,8 +602,6 @@ function AgendaPageContent() {
     if (!events) return false;
     return events.all.length > 0;
   });
-
-  if (isLoading || isFamilyLoading) return <Loading />;
 
   const handleEditClick = (instance: MissionInstance, date: Date) => {
     setInstanceToEdit(instance);
@@ -1155,6 +1157,8 @@ function AgendaPageContent() {
     ? dateRangeOptions.filter(opt => opt.value === 'day' || opt.value === '3days')
     : dateRangeOptions;
   
+  if (isLoading || isFamilyLoading) return <Loading />;
+  
   return (
     <>
       <div className="hidden print:block">
@@ -1338,3 +1342,5 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
+
+  
