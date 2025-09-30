@@ -8,7 +8,6 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Loader2 } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
@@ -68,8 +67,8 @@ export function HeroRoster() {
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     </div>
                 ) : (
-                    <ScrollArea>
-                        <div className="flex space-x-6 pb-4">
+                    <div className="relative w-full overflow-x-auto pb-4 -mb-4">
+                        <div className="flex w-max space-x-6">
                             <Link href="/dashboard/assistente" className="flex flex-col items-center gap-2 w-20 text-center">
                                 <div className="w-16 h-16 rounded-full border-2 border-dashed border-muted-foreground flex items-center justify-center bg-muted/50 hover:bg-accent hover:border-primary transition-colors">
                                     <PlusCircle className="h-8 w-8 text-muted-foreground" />
@@ -89,8 +88,7 @@ export function HeroRoster() {
                                 </button>
                             ))}
                         </div>
-                        <ScrollBar orientation="horizontal" />
-                    </ScrollArea>
+                    </div>
                 )}
             </CardContent>
         </Card>
