@@ -51,8 +51,6 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
     router.push(path);
   }, [router, currentContext]);
   
-  // This useEffect was causing a race condition and has been removed.
-  // The selectHeroAndNavigate function now handles navigation directly.
   
   const openModal = useCallback((destination?: string) => {
     setModalDestination(destination || null);
@@ -68,15 +66,13 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (authLoading) {
-      setIsLoading(true);
-      return;
+      return; // Wait for auth to be ready
     }
 
     let unsubscribeMemberships: () => void = () => {};
     let unsubscribeFamilies: () => void = () => {};
 
     if (user) {
-      setIsLoading(true);
       const initialContexts: EnrichedContext[] = [{ id: 'my-space', name: 'Cuidar Solo', role: 'Personal' }];
       
       const membershipsQuery = query(collection(db, 'familyMemberships'), where('userId', '==', user.uid));
