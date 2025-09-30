@@ -68,11 +68,41 @@ const capitalize = (s: string) => {
 
 const getInitials = (name?: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'MH';
 
-const PrintableAgenda = ({ child, eventsByDay }: { child: ChildProfile | null, eventsByDay: Record<Weekday, CalendarEvent[]> }) => {
+const PrintableAgenda = ({ child, missionInstances, currentDate }: { child: ChildProfile | null, missionInstances: MissionInstance[], currentDate: Date }) => {
     if (!child) return null;
 
+    const weeklyEventsForPrint = useMemo(() => {
+        const startOfCurrentWeek = startOfWeek(currentDate, { weekStartsOn: 1 });
+        const endOfCurrentWeek = endOfWeek(currentDate, { weekStartsOn: 1 });
+        const daysOfWeek = eachDayOfInterval({ start: startOfCurrentWeek, end: endOfCurrentWeek });
+        const eventsByDay: Record<Weekday, CalendarEvent[]> = { MO: [], TU: [], WE: [], TH: [], FR: [], SA: [], SU: [] };
+        
+        const childMissions = missionInstances.filter(inst => inst.childId === child.id);
+
+        daysOfWeek.forEach(day => {
+            const dayOfWeekKey = allWeekdays[day.getDay() === 0 ? 6 : day.getDay() - 1];
+            childMissions.forEach(mission => {
+                if (isMissionScheduledForDate(mission, day)) {
+                    eventsByDay[dayOfWeekKey].push({
+                        date: day,
+                        title: mission.title,
+                        type: 'mission',
+                        data: mission,
+                    });
+                }
+            });
+            eventsByDay[dayOfWeekKey].sort((a, b) => {
+                const timeA = getDateObject(a.data.startDate) || new Date(0);
+                const timeB = getDateObject(b.data.startDate) || new Date(0);
+                return timeA.getTime() - timeB.getTime();
+            });
+        });
+
+        return eventsByDay;
+    }, [currentDate, missionInstances, child]);
+
     return (
-        <div className="printable-agenda-container hidden print:block">
+        <div className="printable-agenda-container">
             {allWeekdays.map((day, index) => (
                 <div key={day} className="day-column">
                     <div className="day-header">
@@ -86,7 +116,7 @@ const PrintableAgenda = ({ child, eventsByDay }: { child: ChildProfile | null, e
                         </div>
                     </div>
                     <div className="missions-list">
-                        {(eventsByDay[day] || []).map(event => (
+                        {(weeklyEventsForPrint[day] || []).map(event => (
                             <div key={event.data.id} className="mission-card-print">
                                 <div className="mission-icon-print">{event.data.emoji || '🎯'}</div>
                                 <div className="mission-details-print">
@@ -172,40 +202,6 @@ function AgendaPageContent() {
   const childrenMap = useMemo(() => new Map(children.map(child => [child.id, child])), [children]);
 
   const childForPrint = selectedChildId ? childrenMap.get(selectedChildId) : (children.length > 0 ? children[0] : null);
-
-  const weeklyEventsForPrint = useMemo(() => {
-    const startOfCurrentWeek = startOfWeek(currentDate, { weekStartsOn: 1 });
-    const endOfCurrentWeek = endOfWeek(currentDate, { weekStartsOn: 1 });
-    const daysOfWeek = eachDayOfInterval({ start: startOfCurrentWeek, end: endOfCurrentWeek });
-    const eventsByDay: Record<Weekday, CalendarEvent[]> = { MO: [], TU: [], WE: [], TH: [], FR: [], SA: [], SU: [] };
-
-    if (!childForPrint) return eventsByDay;
-
-    const childMissions = missionInstances.filter(inst => inst.childId === childForPrint.id);
-
-    daysOfWeek.forEach(day => {
-        const dayOfWeekKey = allWeekdays[day.getDay() === 0 ? 6 : day.getDay() - 1];
-        childMissions.forEach(mission => {
-            if (isMissionScheduledForDate(mission, day)) {
-                eventsByDay[dayOfWeekKey].push({
-                    date: day,
-                    title: mission.title,
-                    type: 'mission',
-                    data: mission,
-                });
-            }
-        });
-        // Sort events within each day by time
-        eventsByDay[dayOfWeekKey].sort((a, b) => {
-            const timeA = getDateObject(a.data.startDate) || new Date(0);
-            const timeB = getDateObject(b.data.startDate) || new Date(0);
-            return timeA.getTime() - timeB.getTime();
-        });
-    });
-
-    return eventsByDay;
-  }, [currentDate, missionInstances, childForPrint]);
-
 
   const handleSelectedChildChange = (id: string | null) => {
     setSelectedChildId(id);
@@ -1158,8 +1154,8 @@ function AgendaPageContent() {
   
   return (
     <>
-      <PrintableAgenda child={childForPrint} eventsByDay={weeklyEventsForPrint} />
-      <div className="space-y-6 print:hidden">
+      <PrintableAgenda child={childForPrint} missionInstances={missionInstances} currentDate={currentDate} />
+      <div className="space-y-6 print-hidden">
         <Card>
           <div className="p-4 flex flex-col md:flex-row md:items-center md:flex-wrap gap-4">
             <div className="flex items-center gap-2 flex-grow">
@@ -1337,3 +1333,5 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
+
+    
