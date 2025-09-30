@@ -10,15 +10,10 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Loader2, ChevronDown } from 'lucide-react';
+import { PlusCircle, Loader2 } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import Link from 'next/link';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { useIsMobile } from '@/hooks/use-mobile';
-
-
-const MAX_HEROES_VISIBLE_MOBILE = 4;
-const MAX_HEROES_VISIBLE_DESKTOP = 8; 
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 export function HeroRoster() {
     const { user } = useAuth();
@@ -26,7 +21,6 @@ export function HeroRoster() {
     const [allChildren, setAllChildren] = useState<ChildProfile[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
-    const isMobile = useIsMobile();
 
     useEffect(() => {
         if (!user || availableContexts.length === 0) {
@@ -64,7 +58,7 @@ export function HeroRoster() {
     };
     
     const renderHeroButton = (child: ChildProfile) => (
-        <button key={child.id} onClick={() => handleHeroClick(child)} className="flex flex-col items-center gap-2 text-center group">
+        <button key={child.id} onClick={() => handleHeroClick(child)} className="flex flex-col items-center gap-2 text-center group w-20">
             <Avatar className="w-16 h-16 text-2xl border-4 shadow-md transition-transform group-hover:scale-105" style={{ borderColor: child.color }}>
                 <AvatarImage src={child.avatar} alt={child.name} />
                 <AvatarFallback className="font-bold" style={{ backgroundColor: child.color }}>
@@ -74,11 +68,6 @@ export function HeroRoster() {
             <p className="text-sm font-semibold truncate w-full group-hover:text-primary">{child.name}</p>
         </button>
     );
-
-    const maxVisibleHeroes = isMobile ? MAX_HEROES_VISIBLE_MOBILE : MAX_HEROES_VISIBLE_DESKTOP;
-    const shouldShowAccordion = allChildren.length > maxVisibleHeroes;
-    const visibleHeroes = shouldShowAccordion ? allChildren.slice(0, maxVisibleHeroes) : allChildren;
-    const hiddenHeroes = shouldShowAccordion ? allChildren.slice(maxVisibleHeroes) : [];
 
     return (
         <Card>
@@ -100,26 +89,12 @@ export function HeroRoster() {
                         <p>Nenhum herói cadastrado ainda.</p>
                      </div>
                 ) : (
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-4 gap-4">
-                            {visibleHeroes.map(renderHeroButton)}
+                    <ScrollArea>
+                        <div className="flex space-x-6 pb-4">
+                            {allChildren.map(renderHeroButton)}
                         </div>
-                        
-                        {hiddenHeroes.length > 0 && (
-                            <Accordion type="single" collapsible>
-                                <AccordionItem value="item-1" className="border-none">
-                                    <AccordionTrigger className="w-full justify-center text-sm font-semibold rounded-md py-2 hover:bg-muted hover:no-underline">
-                                        Ver todos os {allChildren.length} heróis
-                                    </AccordionTrigger>
-                                    <AccordionContent>
-                                        <div className="grid grid-cols-4 gap-4 pt-4 border-t">
-                                            {hiddenHeroes.map(renderHeroButton)}
-                                        </div>
-                                    </AccordionContent>
-                                </AccordionItem>
-                            </Accordion>
-                        )}
-                    </div>
+                        <ScrollBar orientation="horizontal" />
+                    </ScrollArea>
                 )}
             </CardContent>
         </Card>
