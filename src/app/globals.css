@@ -135,9 +135,9 @@ body::before {
         background: none !important;
         color: #000 !important;
     }
-
-    .print-hidden {
-        display: none !important;
+    
+    main[data-sidebar-inset] {
+      overflow: visible !important;
     }
 
     .printable-agenda-container {
@@ -145,6 +145,7 @@ body::before {
         grid-template-columns: 1fr 1fr;
         gap: 1rem;
         width: 100%;
+        page-break-before: always;
     }
 
     .day-column {
@@ -156,12 +157,12 @@ body::before {
         padding: 15px;
     }
     
-    .day-column:nth-child(even) {
+    .day-column:nth-child(even):not(:last-child) {
         page-break-after: always;
     }
 
     .day-column:nth-child(7) {
-        grid-column: 1 / 2; /* Domingo on the left column of a new page */
+        grid-column: 1 / 2;
     }
 
     .day-header {
@@ -205,6 +206,9 @@ body::before {
     .print-only {
         display: none;
     }
+    .print-hidden {
+      display: revert;
+    }
     @media print {
         .print-hidden {
             display: none !important;
@@ -214,5 +218,3 @@ body::before {
         }
     }
 }
-
-    
