@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,12 +7,15 @@ import type { ChildProfile } from '@/lib/types';
 import { getChildProfilesForAttribution } from '@/lib/firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Loader2 } from 'lucide-react';
+import { PlusCircle, Loader2, ChevronDown } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import Link from 'next/link';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+
+const MAX_HEROES_VISIBLE_DEFAULT = 4;
 
 export function HeroRoster() {
     const { user } = useAuth();
@@ -55,38 +59,68 @@ export function HeroRoster() {
         router.push('/dashboard/heroes');
     };
 
+    const visibleHeroes = allChildren.slice(0, MAX_HEROES_VISIBLE_DEFAULT);
+    const hiddenHeroes = allChildren.slice(MAX_HEROES_VISIBLE_DEFAULT);
+
     return (
         <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Meus Mini Heróis</CardTitle>
+                 <Button asChild variant="outline" size="sm">
+                    <Link href="/dashboard/assistente">
+                        <PlusCircle className="mr-2 h-4 w-4" /> Novo Herói
+                    </Link>
+                </Button>
             </CardHeader>
             <CardContent>
                 {isLoading ? (
                     <div className="flex items-center justify-center h-24">
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     </div>
+                ) : allChildren.length === 0 ? (
+                     <div className="text-center py-4 text-muted-foreground">
+                        <p>Nenhum herói cadastrado ainda.</p>
+                     </div>
                 ) : (
-                    <div className="relative w-full overflow-x-auto pb-4 -mb-4">
-                        <div className="flex w-max space-x-6">
-                            <Link href="/dashboard/assistente" className="flex flex-col items-center gap-2 w-20 text-center">
-                                <div className="w-16 h-16 rounded-full border-2 border-dashed border-muted-foreground flex items-center justify-center bg-muted/50 hover:bg-accent hover:border-primary transition-colors">
-                                    <PlusCircle className="h-8 w-8 text-muted-foreground" />
-                                </div>
-                                <p className="text-sm font-semibold text-muted-foreground">Novo Herói</p>
-                            </Link>
-
-                            {allChildren.map(child => (
-                                <button key={child.id} onClick={() => handleHeroClick(child)} className="flex flex-col items-center gap-2 w-20 text-center">
-                                    <Avatar className="w-16 h-16 text-2xl border-4 shadow-md transition-transform hover:scale-105" style={{ borderColor: child.color }}>
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-4 gap-4">
+                            {visibleHeroes.map(child => (
+                                <button key={child.id} onClick={() => handleHeroClick(child)} className="flex flex-col items-center gap-2 text-center group">
+                                    <Avatar className="w-16 h-16 text-2xl border-4 shadow-md transition-transform group-hover:scale-105" style={{ borderColor: child.color }}>
                                         <AvatarImage src={child.avatar} alt={child.name} />
                                         <AvatarFallback className="font-bold" style={{ backgroundColor: child.color }}>
                                             {getInitials(child.name)}
                                         </AvatarFallback>
                                     </Avatar>
-                                    <p className="text-sm font-semibold truncate w-full">{child.name}</p>
+                                    <p className="text-sm font-semibold truncate w-full group-hover:text-primary">{child.name}</p>
                                 </button>
                             ))}
                         </div>
+                        
+                        {hiddenHeroes.length > 0 && (
+                            <Accordion type="single" collapsible>
+                                <AccordionItem value="item-1" className="border-none">
+                                    <AccordionTrigger className="w-full justify-center text-sm font-semibold rounded-md py-2 hover:bg-muted hover:no-underline">
+                                        Ver todos os {allChildren.length} heróis
+                                    </AccordionTrigger>
+                                    <AccordionContent>
+                                        <div className="grid grid-cols-4 gap-4 pt-4 border-t">
+                                            {hiddenHeroes.map(child => (
+                                                 <button key={child.id} onClick={() => handleHeroClick(child)} className="flex flex-col items-center gap-2 text-center group">
+                                                    <Avatar className="w-16 h-16 text-2xl border-4 shadow-md transition-transform group-hover:scale-105" style={{ borderColor: child.color }}>
+                                                        <AvatarImage src={child.avatar} alt={child.name} />
+                                                        <AvatarFallback className="font-bold" style={{ backgroundColor: child.color }}>
+                                                            {getInitials(child.name)}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <p className="text-sm font-semibold truncate w-full group-hover:text-primary">{child.name}</p>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            </Accordion>
+                        )}
                     </div>
                 )}
             </CardContent>
