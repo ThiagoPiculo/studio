@@ -44,10 +44,12 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const selectHeroAndNavigate = useCallback((childId: string, contextId: string, path: string) => {
+    if (currentContext !== contextId) {
+        _setCurrentContext(contextId);
+    }
     _setSelectedChildId(childId);
-    _setCurrentContext(contextId);
     router.push(path);
-  }, [router]);
+  }, [router, currentContext]);
   
   // Navigate to destination after a child is selected from the modal
   useEffect(() => {
