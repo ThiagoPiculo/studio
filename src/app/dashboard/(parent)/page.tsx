@@ -11,13 +11,8 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { useRouter } from 'next/navigation';
 import { Calendar1Icon } from '@/components/icons/Calendar1Icon';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
-import type { ChildProfile, MissionInstance, RewardTemplate } from '@/lib/types';
-import { useAuth } from '@/contexts/AuthContext';
-import { getChildProfilesForAttribution, getMissionInstancesForContext, getRewardTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { HeroRoster } from '@/components/dashboard/dashboard/HeroRoster';
 
@@ -159,15 +154,12 @@ function MobileDashboardCard({
 
 
 function DashboardPage() {
-    const { user, loading: authLoading } = useAuth();
-    const { openModal, selectedChildId, currentContext, isLoading: isFamilyLoading } = useFamily();
-    const router = useRouter();
-    const isMobile = useIsMobile();
+    const { openModal } = useFamily();
+    const [isClient, setIsClient] = React.useState(false);
     
-    const [children, setChildren] = useState<ChildProfile[]>([]);
-    const [missions, setMissions] = useState<MissionInstance[]>([]);
-    const [rewards, setRewards] = useState<RewardTemplate[]>([]);
-    const [isLoadingData, setIsLoadingData] = useState(true);
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
 
     const [isGuideVisible, setIsGuideVisible] = useState(false);
 
@@ -183,34 +175,7 @@ function DashboardPage() {
         setIsGuideVisible(false);
     };
 
-    useEffect(() => {
-        if (authLoading || isFamilyLoading || !user) {
-            if (!user && !authLoading) setIsLoadingData(false);
-            return;
-        }
-
-        const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-        const fetchData = async () => {
-            setIsLoadingData(true);
-            try {
-                const [childData, missionData, rewardData] = await Promise.all([
-                    getChildProfilesForAttribution(user.uid, currentContext),
-                    getMissionInstancesForContext(user.uid, currentContext),
-                    getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
-                ]);
-                setChildren(childData);
-                setMissions(missionData);
-                setRewards(rewardData);
-            } catch (error) {
-                console.error("Error fetching dashboard content data:", error);
-            } finally {
-                setIsLoadingData(false);
-            }
-        };
-
-        fetchData();
-    }, [user, currentContext, authLoading, isFamilyLoading]);
-    
+    const isMobile = isClient && window.innerWidth < 768;
     const DashboardCard = isMobile ? MobileDashboardCard : DesktopDashboardCard;
     const gridClasses = isMobile ? "grid-cols-2 sm:grid-cols-3 gap-3" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6";
 
