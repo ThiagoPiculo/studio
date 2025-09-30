@@ -1,3 +1,4 @@
+
 // NOTA: Este arquivo define o layout para o grupo de rotas '(parent)'.
 // Qualquer página dentro do diretório /dashboard/(parent)/... herdará esta
 // interface com a barra lateral, cabeçalho e rodapé. O nome '(parent)' é
@@ -223,8 +224,7 @@ export default function ParentDashboardLayout({ children }: { children: ReactNod
     ['/dashboard/heroes', '/dashboard/mural', '/dashboard/progressos', '/dashboard/agenda', '/dashboard/school-schedule', '/dashboard/achievements'].includes(pathname) &&
     childrenInContext.length > 1;
 
-  const showTrocarHeroiButton = isClient && selectedHero && pathname !== '/dashboard' && !showHeroSelector;
-
+  const showTrocarHeroiButton = isClient && selectedHero;
 
   return (
     <>
@@ -269,7 +269,7 @@ export default function ParentDashboardLayout({ children }: { children: ReactNod
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  {showTrocarHeroiButton && selectedHero && (
+                  {showTrocarHeroiButton && (
                     <Button variant="outline" size="sm" onClick={() => openModal()} className="p-2 h-auto flex items-center gap-2">
                         <Avatar 
                            className="h-6 w-6 ring-2 ring-offset-1 ring-offset-background ring-[var(--ring-color)]"
@@ -278,7 +278,7 @@ export default function ParentDashboardLayout({ children }: { children: ReactNod
                             <AvatarImage src={selectedHero.avatar} alt={selectedHero.name} />
                             <AvatarFallback style={{backgroundColor: selectedHero.color}}>{getInitials(selectedHero.name)}</AvatarFallback>
                         </Avatar>
-                        <span className="font-semibold text-sm hidden sm:inline">{selectedHero.name}</span>
+                        <span className="font-semibold text-sm hidden sm:inline">Trocar Herói</span>
                         <ChevronsUpDown className="ml-1 h-4 w-4 text-muted-foreground" />
                     </Button>
                   )}
