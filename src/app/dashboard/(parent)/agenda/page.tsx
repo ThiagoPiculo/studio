@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
@@ -108,10 +109,9 @@ const PrintableAgenda = ({ child, missionInstances, currentDate }: { child: Chil
   return (
     <div className="printable-agenda-container">
       {allWeekdays.map((day, index) => {
-        const isPairStart = index % 2 === 0;
         const dayEvents = weeklyEventsForPrint[day as Weekday] || [];
         return (
-          <div key={day} className={`day-column ${isPairStart ? 'pair-start' : ''}`}>
+          <div key={day} className={`day-column`}>
             <div className="day-header">
               <span className="day-title">{weekdayLabels[day].long}</span>
               <div className="hero-info">
@@ -212,6 +212,21 @@ function AgendaPageContent() {
 
   const childForPrint = selectedChildId ? childrenMap.get(selectedChildId) : (children.length > 0 ? children[0] : null);
 
+
+  const handlePrint = () => {
+    const originalTitle = document.title;
+    const childName = childForPrint ? childForPrint.name : 'Agenda';
+    const printTitle = `${childName} - Rotina de missões Semanais - App Mini Herois`;
+    document.title = printTitle;
+
+    const handleAfterPrint = () => {
+      document.title = originalTitle;
+      window.removeEventListener('afterprint', handleAfterPrint);
+    };
+    window.addEventListener('afterprint', handleAfterPrint);
+
+    window.print();
+  };
 
   const handleSelectedChildChange = (id: string | null) => {
     setSelectedChildId(id);
@@ -1228,7 +1243,7 @@ function AgendaPageContent() {
                    <Switch id="kids-view-switch" checked={isKidsView} onCheckedChange={setIsKidsView}/>
                    <Label htmlFor="kids-view-switch" className="text-sm whitespace-nowrap flex items-center gap-1.5">Visão da Criança</Label>
                  </div>
-                 <Button onClick={() => window.print()} variant="outline"><Printer className="mr-2 h-4 w-4"/> Visão de Impressão</Button>
+                 <Button onClick={handlePrint} variant="outline"><Printer className="mr-2 h-4 w-4"/> Visão de Impressão</Button>
                  {canEdit && (
                     <Button asChild className="flex-grow-0 sm:flex-grow-0">
                       <Link href={`/dashboard/missions/new?childId=${selectedChildId || ''}`}>
