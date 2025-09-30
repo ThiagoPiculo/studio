@@ -286,7 +286,9 @@ function DashboardPage() {
         </Accordion>
       )}
 
-      <HeroRoster />
+      <div>
+        <HeroRoster />
+      </div>
       
       <div>
           <h2 className="text-2xl font-headline font-bold mb-4 flex items-center gap-2">Acesso Rápido</h2>

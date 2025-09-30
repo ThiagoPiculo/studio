@@ -35,7 +35,6 @@ export function HeroRoster() {
                 const childrenByContext = await Promise.all(childrenPromises);
                 const flattenedChildren = childrenByContext.flat().sort((a,b) => a.name.localeCompare(b.name));
                 
-                // Remove duplicates in case a child is in multiple contexts (should not happen with current logic, but as a safeguard)
                 const uniqueChildren = Array.from(new Map(flattenedChildren.map(child => [child.id, child])).values());
                 
                 setAllChildren(uniqueChildren);
