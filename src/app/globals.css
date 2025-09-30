@@ -131,15 +131,18 @@ body::before {
 }
 
 @media print {
-    body {
+    body, html {
         background: none !important;
-        -webkit-print-color-adjust: exact;
-        color-adjust: exact;
+        color: #000 !important;
     }
-    
+
+    .print-hidden {
+        display: none !important;
+    }
+
     .printable-agenda-container {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
         gap: 1rem;
         width: 100%;
     }
@@ -148,12 +151,12 @@ body::before {
         page-break-inside: avoid;
         break-inside: avoid;
         padding-top: 1rem;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        padding: 15px;
     }
     
-    /* Logic to break pages */
-    .day-column:nth-child(2),
-    .day-column:nth-child(4),
-    .day-column:nth-child(6) {
+    .day-column:nth-child(even) {
         page-break-after: always;
     }
 
@@ -169,7 +172,7 @@ body::before {
         padding-bottom: 10px;
         margin-bottom: 15px;
     }
-    .day-title { font-size: 1.25rem; font-weight: bold; color: hsl(var(--primary)); }
+    .day-title { font-size: 1.5rem; font-weight: bold; color: #6d28d9; }
     .hero-info { display: flex; align-items: center; gap: 8px; }
     .hero-avatar { width: 32px !important; height: 32px !important; border-radius: 50%; }
     .hero-name { font-size: 0.9rem; font-weight: 500; }
@@ -180,10 +183,10 @@ body::before {
         gap: 15px; 
         padding: 12px; 
         border-radius: 8px; 
-        background-color: #f9fafb !important;
+        background-color: #f3f4f6 !important;
         margin-bottom: 10px; 
     }
-    .mission-icon-print { font-size: 2.25rem; }
+    .mission-icon-print { font-size: 2.5rem; }
     .mission-details-print { flex-grow: 1; }
     .mission-meta-line-print { 
         display: flex; 
@@ -193,8 +196,8 @@ body::before {
         color: #6b7280; 
         font-weight: bold;
     }
-    .mission-meta-line-print .reward-print { color: #f59e0b; }
-    .mission-title-print { font-size: 1.1rem; font-weight: bold; margin-top: 2px; }
+    .mission-meta-line-print .reward-print { color: #ca8a04; }
+    .mission-title-print { font-size: 1.2rem; font-weight: bold; margin-top: 4px; }
     .separator { color: #d1d5db; }
 }
 

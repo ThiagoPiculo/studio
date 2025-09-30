@@ -69,17 +69,21 @@ const capitalize = (s: string) => {
 const getInitials = (name?: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'MH';
 
 const PrintableAgenda = ({ child, missionInstances, currentDate }: { child: ChildProfile | null, missionInstances: MissionInstance[], currentDate: Date }) => {
+  
   const weeklyEventsForPrint = useMemo(() => {
     if (!child) return {};
     const startOfCurrentWeek = startOfWeek(currentDate, { weekStartsOn: 1 });
     const endOfCurrentWeek = endOfWeek(currentDate, { weekStartsOn: 1 });
     const daysOfWeek = eachDayOfInterval({ start: startOfCurrentWeek, end: endOfCurrentWeek });
-    const eventsByDay: Record<string, CalendarEvent[]> = { MO: [], TU: [], WE: [], TH: [], FR: [], SA: [], SU: [] };
+    const eventsByDay: Record<string, CalendarEvent[]> = {};
 
     const childMissions = missionInstances.filter(inst => inst.childId === child.id);
 
     daysOfWeek.forEach(day => {
-      const dayOfWeekKey = allWeekdays[day.getDay() === 0 ? 6 : day.getDay() - 1];
+      const dayOfWeekKey = allWeekdays[day.getDay() === 0 ? 6 : day.getDay() - 1]; // Ajuste para mapear Domingo (0) para o fim do array
+      if(!eventsByDay[dayOfWeekKey]) {
+        eventsByDay[dayOfWeekKey] = [];
+      }
       childMissions.forEach(mission => {
         if (isMissionScheduledForDate(mission, day)) {
           eventsByDay[dayOfWeekKey].push({
@@ -1136,6 +1140,7 @@ function AgendaPageContent() {
   };
   
   const renderContent = () => {
+    if (isLoading || isFamilyLoading) return <Loading />;
     if (isKidsView) {
         return renderGridView();
     }
@@ -1157,14 +1162,12 @@ function AgendaPageContent() {
     ? dateRangeOptions.filter(opt => opt.value === 'day' || opt.value === '3days')
     : dateRangeOptions;
   
-  if (isLoading || isFamilyLoading) return <Loading />;
-  
   return (
     <>
       <div className="hidden print:block">
         <PrintableAgenda child={childForPrint} missionInstances={missionInstances} currentDate={currentDate} />
       </div>
-      <div className="space-y-6 print:hidden">
+      <div className="space-y-6 print-hidden">
         <Card>
           <div className="p-4 flex flex-col md:flex-row md:items-center md:flex-wrap gap-4">
             <div className="flex items-center gap-2 flex-grow">
@@ -1226,7 +1229,7 @@ function AgendaPageContent() {
                    <Switch id="kids-view-switch" checked={isKidsView} onCheckedChange={setIsKidsView}/>
                    <Label htmlFor="kids-view-switch" className="text-sm whitespace-nowrap flex items-center gap-1.5">Visão da Criança</Label>
                  </div>
-                 <Button onClick={() => window.print()} variant="outline"><Printer className="mr-2 h-4 w-4"/> Imprimir</Button>
+                 <Button onClick={() => window.print()} variant="outline"><Printer className="mr-2 h-4 w-4"/> Visão de Impressão</Button>
                  {canEdit && (
                     <Button asChild className="flex-grow-0 sm:flex-grow-0">
                       <Link href={`/dashboard/missions/new?childId=${selectedChildId || ''}`}>
@@ -1343,4 +1346,4 @@ export default function AgendaPage() {
   )
 }
 
-  
+    

@@ -229,11 +229,13 @@ export default function ParentDashboardLayout({ children }: { children: ReactNod
   return (
     <>
       <SidebarProvider>
-        <AppSidebar />
+        <div className="print-hidden">
+            <AppSidebar />
+        </div>
         <SidebarInset>
           <Sheet>
             <div className="flex flex-col" style={{ minHeight: '100svh' }}>
-              <header className="sticky top-0 z-40 flex h-14 items-center justify-between bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
+              <header className="sticky top-0 z-40 flex h-14 items-center justify-between bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6 print-hidden">
                 <div className={cn("flex items-center gap-2 sm:gap-4", isClient && isMobile && "gap-1")}>
                   {isClient && isMobile && !currentHeader && (
                       <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleBackClick}>
@@ -287,7 +289,7 @@ export default function ParentDashboardLayout({ children }: { children: ReactNod
               </header>
               
               {(showContextSwitcher || showMissionsHeaderActions || showRewardsHeaderActions) && (
-                 <div className="px-4 sm:px-6 py-2">
+                 <div className="px-4 sm:px-6 py-2 print-hidden">
                       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-start gap-2">
                          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2">
                             {showContextSwitcher && (
@@ -322,8 +324,10 @@ export default function ParentDashboardLayout({ children }: { children: ReactNod
               )}
 
               <DashboardMainContent>{children}</DashboardMainContent>
-              {isClient && isMobile && <BottomNavbar />}
-              <Footer />
+              <div className="print-hidden">
+                {isClient && isMobile && <BottomNavbar />}
+                <Footer />
+              </div>
             </div>
           </Sheet>
         </SidebarInset>
@@ -332,3 +336,5 @@ export default function ParentDashboardLayout({ children }: { children: ReactNod
     </>
   );
 }
+
+    
