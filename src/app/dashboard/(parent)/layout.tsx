@@ -278,7 +278,7 @@ export default function ParentDashboardLayout({ children }: { children: ReactNod
                             <AvatarImage src={selectedHero.avatar} alt={selectedHero.name} />
                             <AvatarFallback style={{backgroundColor: selectedHero.color}}>{getInitials(selectedHero.name)}</AvatarFallback>
                         </Avatar>
-                        <span className="font-semibold text-sm hidden sm:inline">Trocar Herói</span>
+                        <span className="font-semibold text-sm hidden sm:inline">{selectedHero.name}</span>
                         <ChevronsUpDown className="ml-1 h-4 w-4 text-muted-foreground" />
                     </Button>
                   )}
