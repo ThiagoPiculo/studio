@@ -69,18 +69,17 @@ const capitalize = (s: string) => {
 const getInitials = (name?: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'MH';
 
 const PrintableAgenda = ({ child, missionInstances, currentDate }: { child: ChildProfile | null, missionInstances: MissionInstance[], currentDate: Date }) => {
-  
   const weeklyEventsForPrint = useMemo(() => {
     if (!child) return {};
     const startOfCurrentWeek = startOfWeek(currentDate, { weekStartsOn: 1 });
-    const endOfCurrentWeek = endOfWeek(currentDate, { weekStartsOn: 1 });
+    const endOfCurrentWeek = addDays(startOfCurrentWeek, 6);
     const daysOfWeek = eachDayOfInterval({ start: startOfCurrentWeek, end: endOfCurrentWeek });
     const eventsByDay: Record<string, CalendarEvent[]> = {};
 
     const childMissions = missionInstances.filter(inst => inst.childId === child.id);
 
     daysOfWeek.forEach(day => {
-      const dayOfWeekKey = allWeekdays[day.getDay() === 0 ? 6 : day.getDay() - 1]; // Ajuste para mapear Domingo (0) para o fim do array
+      const dayOfWeekKey = allWeekdays[day.getDay() === 0 ? 6 : day.getDay() - 1];
       if(!eventsByDay[dayOfWeekKey]) {
         eventsByDay[dayOfWeekKey] = [];
       }
@@ -1345,5 +1344,3 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
-
-    
