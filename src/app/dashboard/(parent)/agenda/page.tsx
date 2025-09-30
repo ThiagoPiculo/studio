@@ -66,6 +66,8 @@ const capitalize = (s: string) => {
     return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+const getInitials = (name?: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'MH';
+
 const PrintableAgenda = ({ child, eventsByDay }: { child: ChildProfile | null, eventsByDay: Record<Weekday, CalendarEvent[]> }) => {
     if (!child) return null;
 
@@ -167,6 +169,44 @@ function AgendaPageContent() {
 
   const [confirmingMission, setConfirmingMission] = useState<{ instance: MissionInstance; date: Date } | null>(null);
 
+  const childrenMap = useMemo(() => new Map(children.map(child => [child.id, child])), [children]);
+
+  const childForPrint = selectedChildId ? childrenMap.get(selectedChildId) : (children.length > 0 ? children[0] : null);
+
+  const weeklyEventsForPrint = useMemo(() => {
+    const startOfCurrentWeek = startOfWeek(currentDate, { weekStartsOn: 1 });
+    const endOfCurrentWeek = endOfWeek(currentDate, { weekStartsOn: 1 });
+    const daysOfWeek = eachDayOfInterval({ start: startOfCurrentWeek, end: endOfCurrentWeek });
+    const eventsByDay: Record<Weekday, CalendarEvent[]> = { MO: [], TU: [], WE: [], TH: [], FR: [], SA: [], SU: [] };
+
+    if (!childForPrint) return eventsByDay;
+
+    const childMissions = missionInstances.filter(inst => inst.childId === childForPrint.id);
+
+    daysOfWeek.forEach(day => {
+        const dayOfWeekKey = allWeekdays[day.getDay() === 0 ? 6 : day.getDay() - 1];
+        childMissions.forEach(mission => {
+            if (isMissionScheduledForDate(mission, day)) {
+                eventsByDay[dayOfWeekKey].push({
+                    date: day,
+                    title: mission.title,
+                    type: 'mission',
+                    data: mission,
+                });
+            }
+        });
+        // Sort events within each day by time
+        eventsByDay[dayOfWeekKey].sort((a, b) => {
+            const timeA = getDateObject(a.data.startDate) || new Date(0);
+            const timeB = getDateObject(b.data.startDate) || new Date(0);
+            return timeA.getTime() - timeB.getTime();
+        });
+    });
+
+    return eventsByDay;
+  }, [currentDate, missionInstances, childForPrint]);
+
+
   const handleSelectedChildChange = (id: string | null) => {
     setSelectedChildId(id);
   }
@@ -248,8 +288,6 @@ function AgendaPageContent() {
     return () => unsubscribe();
   }, [user, currentContext, toast, isFamilyLoading, selectedChildId, setSelectedChildId]);
 
-
-  const childrenMap = useMemo(() => new Map(children.map(child => [child.id, child])), [children]);
   const categoryMap = useMemo(() => new Map(missionCategories.map(cat => [cat.id, cat])), []);
 
   // Effect to manage filter state when switching views
@@ -555,14 +593,30 @@ function AgendaPageContent() {
         return `${formattedStartDate} de ${capitalize(startMonth)} - ${formattedEndDate} de ${capitalize(endMonth)} de ${format(end, 'yyyy', { locale: ptBR })}`;
     }
   };
-
-  const getInitials = (name?: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'MH';
   
   const hasAnyEvents = Object.values(eventsByDate).some(day => {
     const events = day as { all: any[] };
     if (!events) return false;
     return events.all.length > 0;
   });
+
+  if (isLoading || isFamilyLoading) return <Loading />;
+
+  const handleEditClick = (instance: MissionInstance, date: Date) => {
+    setInstanceToEdit(instance);
+    setOccurrenceDate(date);
+    if(instance.isRecurring) {
+        setIsRecurrenceEditOpen(true);
+    } else {
+        setRecurrenceEditMode('single');
+        setIsAssignDialogOpen(true);
+    }
+  };
+
+  const handleEditTemplateClick = (instance: MissionInstance) => {
+    router.push(`/dashboard/missions/edit/${instance.templateId}?redirect=${encodeURIComponent(pathname + searchParams.toString())}`);
+  }
+
 
   const renderEventListForPeriod = (events: CalendarEvent[], day: Date) => {
       const eventsByChild = events.reduce((acc, event) => {
@@ -1080,8 +1134,6 @@ function AgendaPageContent() {
     );
   };
   
-  if (isLoading || isFamilyLoading) return <Loading />;
-
   const renderContent = () => {
     if (isKidsView) {
         return renderGridView();
@@ -1104,42 +1156,6 @@ function AgendaPageContent() {
     ? dateRangeOptions.filter(opt => opt.value === 'day' || opt.value === '3days')
     : dateRangeOptions;
   
-  const childForPrint = selectedChildId ? childrenMap.get(selectedChildId) : (children.length > 0 ? children[0] : null);
-
-  const weeklyEventsForPrint = useMemo(() => {
-    const startOfCurrentWeek = startOfWeek(currentDate, { weekStartsOn: 1 });
-    const endOfCurrentWeek = endOfWeek(currentDate, { weekStartsOn: 1 });
-    const daysOfWeek = eachDayOfInterval({ start: startOfCurrentWeek, end: endOfCurrentWeek });
-    const eventsByDay: Record<Weekday, CalendarEvent[]> = { MO: [], TU: [], WE: [], TH: [], FR: [], SA: [], SU: [] };
-
-    if (!childForPrint) return eventsByDay;
-
-    const childMissions = missionInstances.filter(inst => inst.childId === childForPrint.id);
-
-    daysOfWeek.forEach(day => {
-        const dayOfWeekKey = allWeekdays[day.getDay() === 0 ? 6 : day.getDay() - 1];
-        childMissions.forEach(mission => {
-            if (isMissionScheduledForDate(mission, day)) {
-                eventsByDay[dayOfWeekKey].push({
-                    date: day,
-                    title: mission.title,
-                    type: 'mission',
-                    data: mission,
-                });
-            }
-        });
-        // Sort events within each day by time
-        eventsByDay[dayOfWeekKey].sort((a, b) => {
-            const timeA = getDateObject(a.data.startDate) || new Date(0);
-            const timeB = getDateObject(b.data.startDate) || new Date(0);
-            return timeA.getTime() - timeB.getTime();
-        });
-    });
-
-    return eventsByDay;
-  }, [currentDate, missionInstances, childForPrint]);
-
-
   return (
     <>
       <PrintableAgenda child={childForPrint} eventsByDay={weeklyEventsForPrint} />
