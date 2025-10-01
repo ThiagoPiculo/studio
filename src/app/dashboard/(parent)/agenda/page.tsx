@@ -217,12 +217,17 @@ function AgendaPageContent() {
     const originalTitle = document.title;
     const childName = childForPrint ? childForPrint.name : 'Agenda';
     document.title = `${childName} - Rotina de missões Semanais - App Mini Herois`;
-
-    window.addEventListener('afterprint', () => {
+    
+    const onAfterPrint = () => {
         document.title = originalTitle;
-    }, { once: true });
-
-    window.print();
+        window.removeEventListener('afterprint', onAfterPrint);
+    };
+    window.addEventListener('afterprint', onAfterPrint);
+    
+    // Slight delay to ensure title is set before print dialog opens
+    setTimeout(() => {
+        window.print();
+    }, 50);
   };
 
   const handleSelectedChildChange = (id: string | null) => {
@@ -1240,7 +1245,7 @@ function AgendaPageContent() {
                    <Switch id="kids-view-switch" checked={isKidsView} onCheckedChange={setIsKidsView}/>
                    <Label htmlFor="kids-view-switch" className="text-sm whitespace-nowrap flex items-center gap-1.5">Visão da Criança</Label>
                  </div>
-                 <Button onClick={handlePrint} variant="outline"><Printer className="mr-2 h-4 w-4"/> Visão de Impressão</Button>
+                 <Button onClick={handlePrint} variant="outline"><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
                  {canEdit && (
                     <Button asChild className="flex-grow-0 sm:flex-grow-0">
                       <Link href={`/dashboard/missions/new?childId=${selectedChildId || ''}`}>
