@@ -219,13 +219,17 @@ function AgendaPageContent() {
     const printTitle = `${childName} - Rotina de missões Semanais - App Mini Herois`;
     document.title = printTitle;
 
+    // Use a small timeout to ensure the title has been updated in the DOM
+    setTimeout(() => {
+        window.print();
+        // The title is restored in the 'afterprint' event listener
+    }, 100);
+
     const handleAfterPrint = () => {
       document.title = originalTitle;
       window.removeEventListener('afterprint', handleAfterPrint);
     };
     window.addEventListener('afterprint', handleAfterPrint);
-
-    window.print();
   };
 
   const handleSelectedChildChange = (id: string | null) => {
@@ -1359,3 +1363,5 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
+
+    
