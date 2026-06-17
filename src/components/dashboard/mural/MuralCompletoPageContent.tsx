@@ -3,7 +3,7 @@
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress, redeemChildRewardInstance, getChildProfileById, checkAndAwardBadges, recalculateAndSyncBadges, getSchoolScheduleForChild, moveChildToNewContext, deleteSchoolScheduleEntry, getChildProfilesForAttribution, getFamilyMembers, getFamilyMemberships, getRewardTemplatesByOwnerOrFamily, undoRewardRedemption, addChildRewardInstance } from '@/lib/firebase/firestore';
+import { regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress, redeemChildRewardInstance, getChildProfileById, checkAndAwardBadges, recalculateAndSyncBadges, getSchoolScheduleForChild, moveChildToNewContext, deleteSchoolScheduleEntry, getChildProfilesForAttribution, getFamilyMembers, getFamilyMemberships, getRewardTemplatesByOwnerOrFamily, undoRewardRedemption, addChildRewardInstance } from '@/lib/supabase/db';
 import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails, MissionInstance, MissionCategoryDetails, SchoolScheduleEntry, UserProfile, FamilyMembership, FamilyRole, RewardTemplate } from '@/lib/types';
 import { rewardCategories, missionCategories, weekdays, weekdayLabels, familyRoles } from '@/lib/types';
 import { Button } from '@/components/ui/button';

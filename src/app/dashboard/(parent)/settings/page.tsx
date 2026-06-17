@@ -8,8 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { ThemeSwitcher } from "@/components/dashboard/settings/ThemeSwitcher";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
-import { updateDoc, doc } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
+import { supabase } from "@/lib/supabase/config";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Loader2, Palette, Bell, Star, LifeBuoy, Zap, GitBranch, Settings as SettingsIcon } from "lucide-react";
@@ -38,11 +37,12 @@ export default function SettingsPage() {
         if (!user) return;
         setIsSaving(true);
         try {
-            const userRef = doc(db, 'users', user.uid);
-            await updateDoc(userRef, {
-                [`settings.${key}`]: value
-            });
-            
+            const newSettings = { ...(user.settings || {}), [key]: value };
+            const { error } = await supabase.from('user_profiles')
+                .update({ settings: newSettings })
+                .eq('uid', user.uid);
+            if (error) throw error;
+
             if(key === 'rewardMode') setRewardMode(value);
 
             toast({

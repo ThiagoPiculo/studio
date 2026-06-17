@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from '@/components/ui/button';
 import { CircleDot, ChevronsUpDown, Loader2, Link as LinkIcon, Check } from 'lucide-react';
-import { getChildProfilesForAttribution } from '@/lib/firebase/firestore';
+import { getChildProfilesForAttribution } from '@/lib/supabase/db';
 import type { ChildProfile } from '@/lib/types';
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';

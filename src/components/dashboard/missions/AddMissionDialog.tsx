@@ -24,7 +24,7 @@ import {
   getMissionTemplatesByOwnerOrFamily,
   addMissionInstance,
   getActiveChildMissionInstancesByTemplateAndChild,
-} from '@/lib/firebase/firestore';
+} from '@/lib/supabase/db';
 import { Loader2, Users, AlertCircle, PlusCircle, PackageSearch } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';

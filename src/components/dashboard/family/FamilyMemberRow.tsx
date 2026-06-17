@@ -9,10 +9,10 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useAuth } from "@/contexts/AuthContext";
-import { removeFamilyMember } from "@/lib/firebase/firestore";
+import { removeFamilyMember } from "@/lib/supabase/db";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { updateFamilyMemberRole } from "@/lib/firebase/firestore";
+import { updateFamilyMemberRole } from "@/lib/supabase/db";
 
 interface FamilyMemberRowProps {
     member: UserProfile;

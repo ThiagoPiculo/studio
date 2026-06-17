@@ -25,7 +25,7 @@ import {
   addChildRewardInstance,
   getActiveChildRewardInstancesByTemplateAndChild,
   deleteChildRewardInstancesByTemplateAndChild,
-} from '@/lib/firebase/firestore';
+} from '@/lib/supabase/db';
 import { Loader2, Users, AlertCircle, Gift } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';

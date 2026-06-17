@@ -5,10 +5,9 @@ import type { ReactNode } from 'react';
 import React, { useEffect, useState, useCallback } from 'react';
 import type { FamilyContextType, Family, FamilyMembership, FamilyRole } from '@/lib/types';
 import { useAuth } from './AuthContext';
-import { db } from '@/lib/firebase/config';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { supabase } from '@/lib/supabase/config';
+import { mapChildRow } from '@/lib/supabase/auth';
 import { useRouter } from 'next/navigation';
-import { convertTimestampsInObject } from '@/lib/utils';
 
 interface EnrichedContext {
     id: string;
@@ -24,19 +23,17 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
   const [selectedChildId, _setSelectedChildId] = React.useState<string | null>(null);
   const [availableContexts, setAvailableContextsState] = React.useState<EnrichedContext[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
-  
+
   const [childrenInContext, setChildrenInContext] = useState<ChildProfile[]>([]);
   const [isLoadingChildren, setIsLoadingChildren] = useState(true);
 
-  // State for the global modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalDestination, setModalDestination] = useState<string | null>(null);
   const router = useRouter();
 
-
   const setCurrentContext = useCallback((contextId: 'my-space' | string) => {
     _setCurrentContext(contextId);
-    _setSelectedChildId(null); // Reset child when context changes
+    _setSelectedChildId(null);
   }, []);
 
   const setSelectedChildId = useCallback((childId: string | null) => {
@@ -50,8 +47,7 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
     _setSelectedChildId(childId);
     router.push(path);
   }, [router, currentContext]);
-  
-  
+
   const openModal = useCallback((destination?: string) => {
     setModalDestination(destination || null);
     setIsModalOpen(true);
@@ -59,127 +55,128 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
 
   const closeModal = useCallback(() => {
     setIsModalOpen(false);
-    // When the modal closes without selection, clear the destination
     setModalDestination(null);
   }, []);
 
-
   useEffect(() => {
-    if (authLoading) {
-      return; // Wait for auth to be ready
-    }
+    if (authLoading) return;
 
-    let unsubscribeMemberships: () => void = () => {};
-    let unsubscribeFamilies: () => void = () => {};
-
-    if (user) {
-      const initialContexts: EnrichedContext[] = [{ id: 'my-space', name: 'Cuidar Solo', role: 'Personal' }];
-      
-      const membershipsQuery = query(collection(db, 'familyMemberships'), where('userId', '==', user.uid));
-      
-      unsubscribeMemberships = onSnapshot(membershipsQuery, (snapshot) => {
-        const memberships = snapshot.docs.map(doc => doc.data() as FamilyMembership);
-        
-        const processContexts = (familyContexts: EnrichedContext[]) => {
-            const allContexts = [...initialContexts, ...familyContexts];
-            setAvailableContextsState(allContexts);
-
-            const isValidCurrentContext = allContexts.some(c => c.id === currentContext);
-            if (!isValidCurrentContext) {
-                 _setCurrentContext('my-space');
-            }
-            
-            setIsLoading(false);
-        };
-
-        if (memberships.length === 0) {
-            processContexts([]);
-            return;
-        }
-
-        const familyIds = memberships.map(m => m.familyId);
-        const familyRoles = new Map(memberships.map(m => [m.familyId, m.role]));
-
-        const familiesQuery = query(collection(db, 'families'), where('__name__', 'in', familyIds));
-        
-        unsubscribeFamilies = onSnapshot(familiesQuery, (familiesSnapshot) => {
-            const familyContexts = familiesSnapshot.docs.map(doc => {
-                const family = doc.data() as Family;
-                return { 
-                    id: doc.id, 
-                    name: family.name,
-                    role: familyRoles.get(doc.id)
-                };
-            });
-            processContexts(familyContexts);
-
-        }, (error) => {
-            console.error("Error fetching families:", error);
-            processContexts([]);
-        });
-        
-      }, (error) => {
-        console.error("Error fetching family memberships:", error);
-        setAvailableContextsState(initialContexts); 
-        setIsLoading(false);
-      });
-      
-    } else { // No user
+    if (!user) {
       setCurrentContext('my-space');
       setAvailableContextsState([]);
       setIsLoading(false);
+      return;
     }
-    
-    return () => {
-        unsubscribeMemberships();
-        unsubscribeFamilies();
-      };
+
+    const initialContexts: EnrichedContext[] = [{ id: 'my-space', name: 'Cuidar Solo', role: 'Personal' }];
+
+    const loadContexts = async () => {
+      const { data: memberships, error } = await supabase
+        .from('family_memberships')
+        .select('family_id, role')
+        .eq('user_id', user.uid);
+
+      if (error || !memberships || memberships.length === 0) {
+        setAvailableContextsState(initialContexts);
+        setIsLoading(false);
+        return;
+      }
+
+      const familyIds = memberships.map((m: any) => m.family_id);
+      const roleMap = new Map(memberships.map((m: any) => [m.family_id, m.role]));
+
+      const { data: families, error: famError } = await supabase
+        .from('families')
+        .select('id, name')
+        .in('id', familyIds);
+
+      if (famError || !families) {
+        setAvailableContextsState(initialContexts);
+        setIsLoading(false);
+        return;
+      }
+
+      const familyContexts: EnrichedContext[] = families.map((f: any) => ({
+        id: f.id,
+        name: f.name,
+        role: roleMap.get(f.id) as FamilyRole,
+      }));
+
+      const allContexts = [...initialContexts, ...familyContexts];
+      setAvailableContextsState(allContexts);
+      const isValid = allContexts.some(c => c.id === currentContext);
+      if (!isValid) _setCurrentContext('my-space');
+      setIsLoading(false);
+    };
+
+    loadContexts();
+
+    const channel = supabase
+      .channel(`memberships:${user.uid}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'family_memberships',
+        filter: `user_id=eq.${user.uid}`,
+      }, () => { loadContexts(); })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [user, authLoading, currentContext, setCurrentContext]);
 
-  // New listener for children in the current context
   useEffect(() => {
-    if (authLoading || !currentContext) {
+    if (authLoading || !user) {
       setChildrenInContext([]);
       setIsLoadingChildren(false);
       return;
     }
-    
-    if (!user) {
-       setChildrenInContext([]);
-       setIsLoadingChildren(false);
-       return;
-    }
 
     setIsLoadingChildren(true);
-    
-    let q;
-    if (currentContext === 'my-space') {
-      q = query(collection(db, 'children'), where('ownerId', '==', user.uid), where('familyId', '==', null));
-    } else {
-      q = query(collection(db, 'children'), where('familyId', '==', currentContext));
-    }
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const children = snapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as ChildProfile);
-      setChildrenInContext(children.sort((a, b) => a.name.localeCompare(b.name)));
-      setIsLoadingChildren(false);
-    }, (error) => {
-        console.error("Error fetching children for context:", error);
+    const loadChildren = async () => {
+      let query = supabase.from('child_profiles').select('*');
+      if (currentContext === 'my-space') {
+        query = query.eq('owner_id', user.uid).is('family_id', null);
+      } else {
+        query = query.eq('family_id', currentContext);
+      }
+
+      const { data, error } = await query;
+      if (error || !data) {
         setChildrenInContext([]);
-        setIsLoadingChildren(false);
-    });
+      } else {
+        setChildrenInContext(data.map(mapChildRow).sort((a, b) => a.name.localeCompare(b.name)));
+      }
+      setIsLoadingChildren(false);
+    };
 
-    return () => unsubscribe();
+    loadChildren();
+
+    const filter = currentContext === 'my-space'
+      ? `owner_id=eq.${user.uid}`
+      : `family_id=eq.${currentContext}`;
+
+    const channel = supabase
+      .channel(`children:${currentContext}:${user.uid}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'child_profiles',
+        filter,
+      }, () => { loadChildren(); })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [user, authLoading, currentContext]);
 
   const setAvailableContexts = (contexts: EnrichedContext[]) => {
     setAvailableContextsState(contexts);
   };
-  
+
   const currentRole = React.useMemo(() => {
     if (currentContext === 'my-space') return 'Personal';
-    const context = availableContexts.find(c => c.id === currentContext)
-    return context?.role || null
+    const context = availableContexts.find(c => c.id === currentContext);
+    return context?.role || null;
   }, [currentContext, availableContexts]);
 
   const value = {
@@ -187,7 +184,7 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
     setCurrentContext,
     availableContexts,
     setAvailableContexts,
-    isLoading: isLoading || isLoadingChildren || authLoading, // Combine loading states
+    isLoading: isLoading || isLoadingChildren || authLoading,
     currentRole,
     selectedChildId,
     setSelectedChildId,

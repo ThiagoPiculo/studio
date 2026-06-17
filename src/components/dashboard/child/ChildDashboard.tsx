@@ -9,14 +9,12 @@ import {
   getMissionInstancesByChild,
   completeMissionInstance,
   reactivateMissionInstance
-} from '@/lib/firebase/firestore';
+} from '@/lib/supabase/db';
 import type { ChildProfile, MissionInstance } from '@/lib/types';
 import Loading from '@/app/dashboard/(child)/loading';
 import { isMissionScheduledForDate, isMissionCompletedForDate, getDateObject, getPeriodOfDay } from '@/lib/calendar-utils';
 import { startOfDay, format as formatDateFns, subDays, addDays, isToday } from 'date-fns';
-import { onSnapshot, doc, query, collection, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
-import { convertTimestampsInObject } from '@/lib/utils';
+import { supabase } from '@/lib/supabase/config';
 
 
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -63,26 +61,38 @@ export function ChildDashboard() {
     if (isChildAuthenticated && childId) {
       setIsLoading(true);
 
-      const childDocRef = doc(db, 'children', childId);
-      const childUnsubscribe = onSnapshot(childDocRef, (docSnap) => {
-        if (docSnap.exists()) {
-          setChild(convertTimestampsInObject({ id: docSnap.id, ...docSnap.data() }) as ChildProfile);
+      const loadChild = async () => {
+        const profile = await getChildProfileById(childId);
+        if (profile) {
+          setChild(profile);
         } else {
-           toast({ title: 'Erro ao carregar perfil', variant: 'destructive' });
-           logout();
+          toast({ title: 'Erro ao carregar perfil', variant: 'destructive' });
+          logout();
         }
-      });
-      
-      const missionsQuery = query(collection(db, 'missionInstances'), where('childId', '==', childId));
-      const missionsUnsubscribe = onSnapshot(missionsQuery, (snapshot) => {
-          const missions = snapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as MissionInstance);
-          setAllMissions(missions);
-          if (isLoading) setIsLoading(false);
-      });
+      };
+
+      const loadMissions = async () => {
+        const missions = await getMissionInstancesByChild(childId);
+        setAllMissions(missions);
+        setIsLoading(false);
+      };
+
+      loadChild();
+      loadMissions();
+
+      const childChannel = supabase
+        .channel(`child:${childId}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'child_profiles', filter: `id=eq.${childId}` }, () => { loadChild(); })
+        .subscribe();
+
+      const missionsChannel = supabase
+        .channel(`child-missions:${childId}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'mission_instances', filter: `child_id=eq.${childId}` }, () => { loadMissions(); })
+        .subscribe();
 
       return () => {
-        childUnsubscribe();
-        missionsUnsubscribe();
+        supabase.removeChannel(childChannel);
+        supabase.removeChannel(missionsChannel);
       };
     }
   }, [childId, isChildAuthenticated, toast, logout]);

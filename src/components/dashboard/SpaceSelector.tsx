@@ -4,7 +4,7 @@
 import { useFamily } from '@/contexts/FamilyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import Loading from '@/app/dashboard/(parent)/meus-herois/loading';
-import { getChildProfilesByOwner, getChildProfilesByFamily } from '@/lib/firebase/firestore';
+import { getChildProfilesByOwner, getChildProfilesByFamily } from '@/lib/supabase/db';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';

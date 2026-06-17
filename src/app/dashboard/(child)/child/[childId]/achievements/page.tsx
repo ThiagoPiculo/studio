@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import type { ChildProfile } from '@/lib/types';
-import { getChildProfileById } from '@/lib/firebase/firestore';
+import { getChildProfileById } from '@/lib/supabase/db';
 import { predefinedBadgeCategories, type Badge as BadgeType } from '@/lib/badges';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";

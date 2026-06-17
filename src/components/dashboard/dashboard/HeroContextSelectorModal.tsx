@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { useFamily } from '@/contexts/FamilyContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { getChildProfilesForAttribution } from '@/lib/firebase/firestore';
+import { getChildProfilesForAttribution } from '@/lib/supabase/db';
 import type { ChildProfile } from '@/lib/types';
 import { useState, useEffect, useCallback, Fragment } from 'react';
 import { Loader2, CircleDot, Link as LinkIcon, UserPlus } from 'lucide-react';

@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { getChildProfilesByOwner, deleteChildProfile, moveChildToNewContext } from '@/lib/firebase/firestore';
+import { getChildProfilesByOwner, deleteChildProfile, moveChildToNewContext } from '@/lib/supabase/db';
 import type { ChildProfile } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

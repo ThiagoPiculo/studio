@@ -17,9 +17,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useState, useEffect, useMemo, useRef } from "react";
-import { getChildProfilesByFamily, getChildProfilesByOwner, getUserProfile, updateChildProfile, updateChildAvatarUrl, deleteAvatar } from "@/lib/firebase/firestore";
-import { ref, uploadBytes, getDownloadURL, getMetadata } from "firebase/storage";
-import { storage } from "@/lib/firebase/config";
+import { getChildProfilesByFamily, getChildProfilesByOwner, getUserProfile, updateChildProfile, updateChildAvatarUrl, deleteAvatar } from "@/lib/supabase/db";
+import { supabase } from "@/lib/supabase/config";
 import type { ChildProfile, HeroColor, UserProfile, SchoolShift, FamilyRole } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, Calendar as CalendarIcon, RotateCcw, AlertTriangle, User, Clock, RefreshCw, Camera, X, UploadCloud, Trash2, Shield } from "lucide-react";
@@ -282,41 +281,19 @@ const handleCropAndUpload = async () => {
 
     try {
         const croppedBlob = await getCroppedImg(imgRef.current, crop);
-        const originalPath = `avatars/${child.ownerId}/${child.id}/avatar.png`;
-        const resizedPath = `avatars/${child.ownerId}/${child.id}/avatar_200x200.png`;
+        const path = `${child.ownerId}/${child.id}/avatar.png`;
 
-        // 1. Upload the original image
-        const storageRef = ref(storage, originalPath);
-        await uploadBytes(storageRef, croppedBlob);
+        // Upload to Supabase Storage bucket "avatars" (upsert overwrites previous)
+        const { error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(path, croppedBlob, { upsert: true, contentType: 'image/png' });
+        if (uploadError) throw uploadError;
 
-        // 2. Poll for the resized image to exist
-        const resizedFileRef = ref(storage, resizedPath);
-        let newUrl = '';
-        const maxAttempts = 15; // Try for 15 seconds
-        let attempt = 0;
-        
-        while (attempt < maxAttempts) {
-            try {
-                // Try to get metadata. This fails if the object doesn't exist.
-                await getMetadata(resizedFileRef);
-                // If the above line doesn't throw, the file exists. Get the URL.
-                newUrl = await getDownloadURL(resizedFileRef);
-                break; // Success! Exit the loop.
-            } catch (error: any) {
-                if (error.code === 'storage/object-not-found') {
-                    attempt++;
-                    if (attempt >= maxAttempts) {
-                        throw new Error("Aguardando o arquivo redimensionado, mas o tempo se esgotou. A extensão pode não estar funcionando corretamente.");
-                    }
-                    // Wait for 1 second before the next attempt
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                } else {
-                    throw error; // Re-throw other errors
-                }
-            }
-        }
-        
-        // 3. Update Firestore with the new URL
+        // Public URL with cache-busting query so the new image shows immediately
+        const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(path);
+        const newUrl = `${publicData.publicUrl}?t=${Date.now()}`;
+
+        // Update DB with the new URL
         await updateChildAvatarUrl(child.id, newUrl);
         setAvatarPreview(newUrl);
         onProfileUpdate(); // Triggers data refetch in the parent component

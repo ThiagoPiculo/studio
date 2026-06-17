@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { joinFamilyByInviteCode } from "@/lib/firebase/firestore";
+import { joinFamilyByInviteCode } from "@/lib/supabase/db";
 import { Loader2, UserPlus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";

@@ -6,7 +6,7 @@ import { useEffect, useState, Suspense, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { getFamilyMembers, getFamilyById, getPendingJoinRequestsForFamily, getFamilyMemberships, getChildProfilesByFamily, moveChildToNewContext, updateFamilyName, deleteFamily, getChildProfilesByOwner, approveJoinRequest, declineJoinRequest, getUserProfile } from '@/lib/firebase/firestore';
+import { getFamilyMembers, getFamilyById, getPendingJoinRequestsForFamily, getFamilyMemberships, getChildProfilesByFamily, moveChildToNewContext, updateFamilyName, deleteFamily, getChildProfilesByOwner, approveJoinRequest, declineJoinRequest, getUserProfile } from '@/lib/supabase/db';
 import type { UserProfile, ChildProfile, FamilyRole, Family, FamilyInvitation, FamilyMembership } from '@/lib/types';
 import { familyRoles } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';

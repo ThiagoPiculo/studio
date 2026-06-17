@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { getTodaysMissions, getSchoolScheduleForChild, completeMissionInstance, reactivateMissionInstance, deleteMissionInstance } from '@/lib/firebase/firestore';
+import { getTodaysMissions, getSchoolScheduleForChild, completeMissionInstance, reactivateMissionInstance, deleteMissionInstance, getMissionInstancesForContext, getChildProfilesForAttribution } from '@/lib/supabase/db';
 import { Progress } from '@/components/ui/progress';
 import { isMissionScheduledForDate, isMissionCompletedForDate, getDayToWeekday, getDateObject, parseTime, getPeriodOfDay } from '@/lib/calendar-utils';
 import { getDay, startOfDay, format as formatDateFns } from 'date-fns';
@@ -30,8 +30,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { CompleteMissionConfirmationDialog } from '../missions/CompleteMissionConfirmationDialog';
 import { missionToBlockMap } from '@/lib/mission-block-mapping';
-import { onSnapshot, query, collection, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
+import { supabase } from '@/lib/supabase/config';
 
 interface ActivityItem {
     id: string;
@@ -69,39 +68,47 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
     // Real-time listener for mission instances
     useEffect(() => {
         if (!user) return;
-        
-        let q;
-        if(currentContext === 'my-space') {
-            q = query(collection(db, 'missionInstances'), where('ownerId', '==', user.uid), where('familyId', '==', null));
-        } else {
-            q = query(collection(db, 'missionInstances'), where('familyId', '==', currentContext));
-        }
-        
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const missions = snapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as MissionInstance);
-            setMissionInstances(missions);
-        });
 
-        return () => unsubscribe();
+        const loadMissions = async () => {
+            try {
+                const missions = await getMissionInstancesForContext(user.uid, currentContext);
+                setMissionInstances(missions);
+            } catch (e) { console.error("Error fetching missions:", e); }
+        };
+        loadMissions();
+
+        const filter = currentContext === 'my-space'
+            ? `owner_id=eq.${user.uid}`
+            : `family_id=eq.${currentContext}`;
+        const channel = supabase
+            .channel(`hs-missions:${currentContext}:${user.uid}`)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'mission_instances', filter }, () => { loadMissions(); })
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
     }, [user, currentContext]);
-    
+
     // Real-time listener for children profiles
     useEffect(() => {
         if (!user) return;
-        
-        let q;
-        if(currentContext === 'my-space') {
-            q = query(collection(db, 'children'), where('ownerId', '==', user.uid), where('familyId', '==', null));
-        } else {
-            q = query(collection(db, 'children'), where('familyId', '==', currentContext));
-        }
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const childrenProfiles = snapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as ChildProfile);
-            setChildren(childrenProfiles);
-        });
-        
-        return () => unsubscribe();
+        const loadChildren = async () => {
+            try {
+                const childrenProfiles = await getChildProfilesForAttribution(user.uid, currentContext);
+                setChildren(childrenProfiles);
+            } catch (e) { console.error("Error fetching children:", e); }
+        };
+        loadChildren();
+
+        const filter = currentContext === 'my-space'
+            ? `owner_id=eq.${user.uid}`
+            : `family_id=eq.${currentContext}`;
+        const channel = supabase
+            .channel(`hs-children:${currentContext}:${user.uid}`)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'child_profiles', filter }, () => { loadChildren(); })
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
     }, [user, currentContext]);
 
 

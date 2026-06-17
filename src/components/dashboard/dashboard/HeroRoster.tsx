@@ -4,7 +4,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import type { ChildProfile } from '@/lib/types';
-import { getChildProfilesForAttribution } from '@/lib/firebase/firestore';
+import { getChildProfilesForAttribution } from '@/lib/supabase/db';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';

@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import type { MissionTemplate } from '@/lib/types';
-import { addMissionTemplate, getMissionTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
+import { addMissionTemplate, getMissionTemplatesByOwnerOrFamily } from '@/lib/supabase/db';
 import { Loader2, Share2, CircleDot, Link as LinkIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 

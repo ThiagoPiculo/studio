@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { toggleUserFeatureVote, getFeatureVoteCount, getUserFeatureVote } from '@/lib/firebase/firestore';
+import { toggleUserFeatureVote, getFeatureVoteCount, getUserFeatureVote } from '@/lib/supabase/db';
 import { Loader2, ThumbsUp } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 

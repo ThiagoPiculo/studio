@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { addRewardTemplate, getRewardTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
+import { addRewardTemplate, getRewardTemplatesByOwnerOrFamily } from '@/lib/supabase/db';
 import type { RewardCategory, RewardTemplate } from '@/lib/types';
 import { rewardCategories } from '@/lib/types'; 
 import { Loader2, Gift, ArrowLeft, AlertTriangle, Sparkles, Star as StarIcon, Edit3, ChevronsUpDown, Check, CircleDot, Link as LinkIcon } from 'lucide-react';

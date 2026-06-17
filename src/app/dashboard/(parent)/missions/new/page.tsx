@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { addMissionTemplate, getMissionTemplatesByOwnerOrFamily, updateMissionTemplate, getChildProfilesForAttribution } from '@/lib/firebase/firestore';
+import { addMissionTemplate, getMissionTemplatesByOwnerOrFamily, updateMissionTemplate, getChildProfilesForAttribution } from '@/lib/supabase/db';
 import type { MissionCategory, MissionTemplate, ChildProfile } from '@/lib/types';
 import { missionCategories } from '@/lib/types'; 
 import { Loader2, Target, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb, Check, ChevronsUpDown, Edit3, CircleDot, Link as LinkIcon } from 'lucide-react';

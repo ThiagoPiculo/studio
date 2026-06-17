@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Info, Trash2, Check, ChevronsUpDown } from 'lucide-react';
 import type { ChildProfile, SchoolScheduleEntry, Weekday } from '@/lib/types';
 import { schoolSubjects, allWeekdays, weekdayLabels } from '@/lib/types';
-import { addSchoolScheduleEntry, updateSchoolScheduleEntry, addRecurringSchoolEntry } from '@/lib/firebase/firestore';
+import { addSchoolScheduleEntry, updateSchoolScheduleEntry, addRecurringSchoolEntry } from '@/lib/supabase/db';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';

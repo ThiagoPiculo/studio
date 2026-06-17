@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save } from 'lucide-react';
 import type { ChildProfile, SchoolShift } from '@/lib/types';
 import { schoolShifts } from '@/lib/types';
-import { updateChildProfile } from '@/lib/firebase/firestore';
+import { updateChildProfile } from '@/lib/supabase/db';
 import { TimePicker } from './TimePicker';
 
 const shiftFormSchema = z.object({

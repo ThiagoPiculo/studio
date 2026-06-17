@@ -21,7 +21,7 @@ import {
   getMissionTemplatesByOwnerOrFamily,
   getChildProfilesForAttribution,
   getMissionInstancesForContext
-} from '@/lib/firebase/firestore';
+} from '@/lib/supabase/db';
 import { Loader2, PackageSearch, PlusCircle, Users, Star } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';

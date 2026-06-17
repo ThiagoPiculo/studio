@@ -7,12 +7,11 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isToday, addDays, subDays, eachDayOfInterval, startOfDay, isSameDay, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckSquare, Square, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2, Target, Filter, ArrowLeft, NotebookPen, Edit3, Repeat, FileText, CalendarDays, HelpCircle, ExternalLink, View, Sparkles, MoreVertical, Circle, CheckCircle, Heart, Printer } from 'lucide-react';
-import { onSnapshot, query, collection, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
+import { supabase } from '@/lib/supabase/config';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { getChildProfilesForAttribution, getMissionInstancesForContext, getMissionTemplateById, completeMissionInstance, reactivateMissionInstance, excludeMissionInstanceOccurrence, updateRecurringMissionInstance, deleteMissionInstance, deleteFutureOccurrences } from '@/lib/firebase/firestore';
+import { getChildProfilesForAttribution, getMissionInstancesForContext, getMissionTemplateById, completeMissionInstance, reactivateMissionInstance, excludeMissionInstanceOccurrence, updateRecurringMissionInstance, deleteMissionInstance, deleteFutureOccurrences } from '@/lib/supabase/db';
 import { isMissionScheduledForDate, isMissionCompletedForDate, formatRecurrenceSummary, getDateObject, convertTimestampsInObject } from '@/lib/calendar-utils';
 import type { ChildProfile, MissionInstance, MissionTemplate, MissionCategoryDetails, FamilyRole, Weekday } from '@/lib/types';
 import { missionCategories, weekdays, familyRoles, allWeekdays, weekdayLabels } from '@/lib/types';
@@ -289,26 +288,31 @@ function AgendaPageContent() {
     };
 
     fetchInitialData();
-    
+
     const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-    let q;
-    if (familyIdToQuery) {
-        q = query(collection(db, 'missionInstances'), where('familyId', '==', familyIdToQuery));
-    } else {
-        q = query(collection(db, 'missionInstances'), where('ownerId', '==', user.uid), where('familyId', '==', null));
-    }
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-        const instances = snapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as MissionInstance);
-        setMissionInstances(instances);
-        setIsLoading(false);
-    }, (error) => {
-        console.error("Error fetching mission instances in real-time:", error);
-        toast({ title: 'Erro ao atualizar missões', variant: 'destructive' });
-        setIsLoading(false);
-    });
+    const loadInstances = async () => {
+        try {
+            const instances = await getMissionInstancesForContext(user.uid, currentContext);
+            setMissionInstances(instances);
+        } catch (error) {
+            console.error("Error fetching mission instances:", error);
+            toast({ title: 'Erro ao atualizar missões', variant: 'destructive' });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    loadInstances();
 
-    return () => unsubscribe();
+    const filter = familyIdToQuery
+        ? `family_id=eq.${familyIdToQuery}`
+        : `owner_id=eq.${user.uid}`;
+    const channel = supabase
+        .channel(`agenda-missions:${currentContext}:${user.uid}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'mission_instances', filter }, () => { loadInstances(); })
+        .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [user, currentContext, toast, isFamilyLoading, selectedChildId, setSelectedChildId]);
 
   const categoryMap = useMemo(() => new Map(missionCategories.map(cat => [cat.id, cat])), []);

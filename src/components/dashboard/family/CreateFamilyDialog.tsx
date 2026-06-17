@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useToast } from "@/hooks/use-toast"
-import { createFamily } from "@/lib/firebase/firestore"
+import { createFamily } from "@/lib/supabase/db"
 import { Input } from "@/components/ui/input"
 import {
   AlertDialog,

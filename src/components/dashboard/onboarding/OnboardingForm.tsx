@@ -7,7 +7,7 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
-import { addMissionTemplate, addMissionInstance, addChildProfile } from "@/lib/firebase/firestore";
+import { addMissionTemplate, addMissionInstance, addChildProfile } from "@/lib/supabase/db";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, UserPlus, ArrowRight, ArrowLeft, Wand2, AlertTriangle, Tv } from "lucide-react";
 import { Progress } from "@/components/ui/progress";

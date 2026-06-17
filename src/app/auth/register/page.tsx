@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { joinFamilyByInviteCode } from '@/lib/firebase/firestore';
+import { joinFamilyByInviteCode } from '@/lib/supabase/db';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Separator } from '@/components/ui/separator';
 

@@ -26,7 +26,7 @@ import {
   getMissionTemplateById,
   getChildProfileById,
   getActiveMissionInstancesByTemplate
-} from '@/lib/firebase/firestore';
+} from '@/lib/supabase/db';
 import { Loader2, Users, AlertCircle, Target, Edit, CalendarDays, Save, ArrowLeft, XCircle, NotebookPen, Info, CircleDot, Link as LinkIcon, Clock } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';

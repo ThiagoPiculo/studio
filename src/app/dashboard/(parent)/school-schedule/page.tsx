@@ -6,7 +6,7 @@ import Loading from './loading';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import type { ChildProfile, SchoolScheduleEntry, Weekday } from '@/lib/types';
-import { getSchoolScheduleForContext, deleteSchoolScheduleEntry } from '@/lib/firebase/firestore';
+import { getSchoolScheduleForContext, deleteSchoolScheduleEntry } from '@/lib/supabase/db';
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

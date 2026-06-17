@@ -7,11 +7,9 @@ import { HeroesSummary } from "@/components/dashboard/heroes/HeroesSummary";
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import type { ChildProfile, MissionInstance, RewardTemplate } from '@/lib/types';
-import { getChildProfilesForAttribution, getRewardTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
+import { getChildProfilesForAttribution, getRewardTemplatesByOwnerOrFamily, getMissionInstancesForContext } from '@/lib/supabase/db';
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
-import { onSnapshot, query, collection, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
-import { convertTimestampsInObject } from '@/lib/utils';
+import { supabase } from '@/lib/supabase/config';
 
 function HeroesPageContent() {
     const { user, loading: authLoading } = useAuth();
@@ -52,24 +50,35 @@ function HeroesPageContent() {
 
         fetchStaticData();
 
-        let missionsQuery;
-        if (familyIdToQuery) {
-            missionsQuery = query(collection(db, 'missionInstances'), where('familyId', '==', familyIdToQuery));
-        } else {
-            missionsQuery = query(collection(db, 'missionInstances'), where('ownerId', '==', user.uid), where('familyId', '==', null));
-        }
+        const loadMissions = async () => {
+            try {
+                const missionData = await getMissionInstancesForContext(user.uid, currentContext);
+                setMissions(missionData);
+            } catch (error) {
+                console.error("Error fetching missions:", error);
+                setMissions([]);
+            } finally {
+                setIsLoadingData(false);
+            }
+        };
 
-        const unsubscribe = onSnapshot(missionsQuery, (snapshot) => {
-            const missionData = snapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as MissionInstance);
-            setMissions(missionData);
-            if(isLoadingData) setIsLoadingData(false);
-        }, (error) => {
-            console.error("Error fetching real-time missions:", error);
-            setMissions([]);
-            setIsLoadingData(false);
-        });
+        loadMissions();
 
-        return () => unsubscribe();
+        const filter = familyIdToQuery
+            ? `family_id=eq.${familyIdToQuery}`
+            : `owner_id=eq.${user.uid}`;
+
+        const channel = supabase
+            .channel(`heroes-missions:${currentContext}:${user.uid}`)
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'mission_instances',
+                filter,
+            }, () => { loadMissions(); })
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
     }, [user, currentContext, authLoading, isFamilyLoading]);
 
     if (authLoading || isFamilyLoading || isLoadingData || children === null || missions === null || rewards === null) {

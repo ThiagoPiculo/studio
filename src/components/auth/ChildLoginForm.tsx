@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, KeyRound, HelpCircle } from "lucide-react";
-import { findChildByAccessCode } from "@/lib/firebase/firestore";
+import { findChildByAccessCode } from "@/lib/supabase/db";
 import { useAuth } from "@/contexts/AuthContext";
 
 const childLoginSchema = z.object({

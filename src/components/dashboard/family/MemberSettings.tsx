@@ -11,7 +11,7 @@ import { cn, getInitials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
-import { removeFamilyMember, updateFamilyMemberRole, leaveFamily, getFamilyById } from "@/lib/firebase/firestore";
+import { removeFamilyMember, updateFamilyMemberRole, leaveFamily, getFamilyById } from "@/lib/supabase/db";
 import {
   AlertDialog,
   AlertDialogAction,

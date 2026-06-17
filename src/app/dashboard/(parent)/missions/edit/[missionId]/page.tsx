@@ -21,7 +21,7 @@ import {
   updateMissionTemplate,
   getMissionInstancesForContext,
   getChildProfilesForAttribution,
-} from '@/lib/firebase/firestore';
+} from '@/lib/supabase/db';
 import type { MissionCategory, MissionTemplate, ChildProfile, MissionInstance } from '@/lib/types';
 import { missionCategories } from '@/lib/types'; 
 import { Loader2, Target, Save, ArrowLeft, Star as StarIcon, BadgeCheck, Users, ArrowRight } from 'lucide-react';

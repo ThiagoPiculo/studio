@@ -22,7 +22,7 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { 
   getRewardTemplatesByOwnerOrFamily,
   deleteRewardTemplate,
-} from '@/lib/firebase/firestore';
+} from '@/lib/supabase/db';
 import type { RewardTemplate, RewardCategoryDetails, FamilyRole } from '@/lib/types';
 import { rewardCategories } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';

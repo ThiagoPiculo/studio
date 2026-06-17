@@ -4,7 +4,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { requestRewardRedemption, getChildProfileById, getChildRewardInstancesByChild, toggleFavoriteReward } from '@/lib/firebase/firestore';
+import { requestRewardRedemption, getChildProfileById, getChildRewardInstancesByChild, toggleFavoriteReward } from '@/lib/supabase/db';
 import type { ChildRewardInstance, ChildProfile } from '@/lib/types';
 import type { PredefinedRewardIdea } from '@/lib/predefined-reward-ideas';
 import Loading from '../loading';

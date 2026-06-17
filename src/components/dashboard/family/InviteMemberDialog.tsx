@@ -20,7 +20,7 @@ import { Label } from '@/components/ui/label';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { createFamilyInvitation } from '@/lib/firebase/firestore';
+import { createFamilyInvitation } from '@/lib/supabase/db';
 import { Loader2, UserPlus, Copy, Link as LinkIcon, Info } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';

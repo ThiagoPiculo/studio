@@ -17,16 +17,14 @@ import type { Notification, ChildProfile } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { getUserNotifications, markNotificationsAsRead, getChildProfilesForAttribution } from '@/lib/firebase/firestore';
+import { getUserNotifications, markNotificationsAsRead, getChildProfilesForAttribution } from '@/lib/supabase/db';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRouter } from 'next/navigation';
-import { db } from '@/lib/firebase/config';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
-import { convertTimestampsInObject } from '@/lib/utils';
+import { supabase } from '@/lib/supabase/config';
 
 
 // Map notification types to icons
@@ -105,25 +103,44 @@ export function Notifications() {
     }
 
     setIsLoading(true);
-    const q = query(
-      collection(db, 'notifications'),
-      where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc')
-    );
 
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const fetchedNotifications = querySnapshot.docs.map(doc => 
-        convertTimestampsInObject({ id: doc.id, ...doc.data() }) as Notification
-      );
-      setNotifications(fetchedNotifications);
+    const loadNotifications = async () => {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.uid)
+        .order('created_at', { ascending: false });
+      if (error) { console.error("Failed to fetch notifications:", error); }
+      else {
+        setNotifications((data ?? []).map((n: any) => ({
+          id: n.id,
+          userId: n.user_id,
+          type: n.type,
+          title: n.title,
+          description: n.description,
+          isRead: n.is_read,
+          href: n.href,
+          relatedChildId: n.related_child_id ?? null,
+          relatedContextId: n.related_context_id ?? null,
+          createdAt: n.created_at,
+        }) as Notification));
+      }
       setIsLoading(false);
-    }, (error) => {
-      console.error("Failed to fetch notifications in real-time:", error);
-      setIsLoading(false);
-    });
+    };
 
-    // Cleanup listener on component unmount
-    return () => unsubscribe();
+    loadNotifications();
+
+    const channel = supabase
+      .channel(`notifications:${user.uid}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${user.uid}`,
+      }, () => { loadNotifications(); })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [user]);
 
 

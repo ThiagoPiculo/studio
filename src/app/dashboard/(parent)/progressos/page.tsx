@@ -8,7 +8,7 @@ import Loading from './loading';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import type { ChildProfile, MissionInstance, RewardTemplate } from '@/lib/types';
-import { getChildProfilesForAttribution, getMissionInstancesForContext, getRewardTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
+import { getChildProfilesForAttribution, getMissionInstancesForContext, getRewardTemplatesByOwnerOrFamily } from '@/lib/supabase/db';
 import { DashboardClientPage } from '@/components/dashboard/dashboard/DashboardClientPage';
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
 

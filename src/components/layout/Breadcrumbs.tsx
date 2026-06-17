@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { usePathname, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
-import { getChildProfileById, getMissionTemplateById, getRewardTemplateById } from '@/lib/firebase/firestore';
+import { getChildProfileById, getMissionTemplateById, getRewardTemplateById } from '@/lib/supabase/db';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 

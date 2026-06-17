@@ -15,11 +15,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { doc, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
-import { updateProfile } from "firebase/auth";
-import { auth } from '@/lib/firebase/config';
-import { resetPassword, deleteUserAccount } from '@/lib/firebase/auth';
+import { supabase } from "@/lib/supabase/config";
+import { resetPassword, deleteUserAccount } from '@/lib/supabase/auth';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,7 +38,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import ReactCrop, { type Crop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-import { uploadUserAvatarAndUpdateProfile, deleteAvatar } from '@/lib/firebase/firestore';
+import { uploadUserAvatarAndUpdateProfile, deleteAvatar } from '@/lib/supabase/db';
 
 
 const profileFormSchema = z.object({
@@ -154,18 +151,18 @@ export default function ProfilePage() {
 
 
   const onSubmit = async (data: ProfileFormValues) => {
-    if (!user || !auth.currentUser) {
+    if (!user) {
       toast({ title: "Usuário não autenticado", variant: "destructive" });
       return;
     }
     setIsLoading(true);
     try {
-      // Update Firebase Auth profile
-      await updateProfile(auth.currentUser, { displayName: data.name });
+      // Update Supabase Auth metadata
+      await supabase.auth.updateUser({ data: { full_name: data.name } });
 
-      // Update Firestore document
-      const userDocRef = doc(db, 'users', user.uid);
-      await updateDoc(userDocRef, { name: data.name });
+      // Update user_profiles row
+      const { error } = await supabase.from('user_profiles').update({ name: data.name }).eq('uid', user.uid);
+      if (error) throw error;
 
       toast({ title: "Perfil Atualizado", description: "Seu nome foi alterado com sucesso." });
     } catch (error) {

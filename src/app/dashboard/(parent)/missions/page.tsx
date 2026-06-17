@@ -24,7 +24,7 @@ import {
   deleteMissionTemplateAndInstances,
   getChildProfilesForAttribution,
   getMissionInstancesForContext
-} from '@/lib/firebase/firestore';
+} from '@/lib/supabase/db';
 import type { MissionTemplate, MissionCategoryDetails, ChildProfile, FamilyRole, MissionInstance } from '@/lib/types';
 import { missionCategories } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';

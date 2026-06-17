@@ -1,28 +1,26 @@
-import { db } from '@/lib/firebase/config';
-import { collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
+import { createClient } from '@supabase/supabase-js';
 import { subDays } from 'date-fns';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    // Correctly calculate the cutoff date using the server's current time.
-    // serverTimestamp() is a sentinel value for writes, not for calculations.
-    const cutoffDate = subDays(new Date(), 30);
-
-    const q = query(
-      collection(db, 'familyInvitations'),
-      where('createdAt', '<', cutoffDate)
+    // Use the service-role key so the cron can delete across all users (bypasses RLS).
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
 
-    const querySnapshot = await getDocs(q);
-    const deletionPromises: Promise<void>[] = [];
-    querySnapshot.forEach((doc) => {
-      deletionPromises.push(deleteDoc(doc.ref));
-    });
+    const cutoffDate = subDays(new Date(), 30).toISOString();
 
-    await Promise.all(deletionPromises);
+    const { data, error } = await supabaseAdmin
+      .from('family_invitations')
+      .delete()
+      .lt('created_at', cutoffDate)
+      .select('id');
 
-    return NextResponse.json({ message: `Successfully deleted ${deletionPromises.length} old invitations` }, { status: 200 });
+    if (error) throw error;
+
+    return NextResponse.json({ message: `Successfully deleted ${data?.length ?? 0} old invitations` }, { status: 200 });
 
   } catch (error) {
     console.error('Failed to clear old invitations:', error);
